@@ -1,94 +1,99 @@
-# PërKompanion
+# Perkompanion
 
-> Un compagnon hardware + software qui transforme l'Erica Synths Perkons HD-01 en instrument augmenté, sans jamais modifier son fonctionnement natif.
+> A hardware + software companion for the Erica Synths Perkons HD-01.
 
-**Status** : Phase 0 — Caractérisation MIDI et préparation  
-**Première release prévue** : fin 2026 / début 2027
+🇫🇷 [Lire en français](README.fr.md)
 
 ---
 
-## Le projet
+## What is Perkompanion?
 
-PërKompanion ajoute au Perkons HD-01 ce que son firmware ne propose pas :
+Perkompanion is a modular hardware and software extension designed to expand the capabilities of the [Erica Synths Perkons HD-01](https://www.ericasynths.lv/shop/standalone-instruments/perkons-hd-01/). It adds a drum trigger pad, virtual voices, motion recording, hotcue library, DSP effects, and deep MIDI routing — while keeping the Perkons as the master clock and the core percussion engine.
 
-- **Multi-LFOs indépendants** par voix et par paramètre (le Perkons n'en a qu'un seul, global, non-resettable)
-- **Transitions synchronisées au step 1** pour tout changement de kit, pattern ou modulation
-- **Hybrid Kit Mode** — hot-swap d'une voix individuelle vers le timbre d'un autre kit, sans toucher aux 3 autres voix
-- **Monitoring temps réel** de tous les paramètres, avec comparaison live vs stored
-- **Captures de jam** automatiques, nommées selon le contexte kit/pattern actif
+The goal is to turn the Perkons into a full live-performance instrument without replacing what makes it unique.
 
-Le Perkons reste la source sonore unique. PërKompanion pilote ses paramètres en MIDI, en overlay non-destructive. Débranche PërKompanion, le Perkons reste exactement comme avant.
+---
 
-## Architecture
+## Status
 
-- **Cerveau** : Raspberry Pi 5 4GB — moteur Python (Flask + mido)
-- **Interface** : écran tactile 10.1" HDMI intégré au module + accès Wi-Fi depuis laptop/téléphone
-- **Panneau hardware** : 16 encodeurs (4 par voix en 2×2), 4 OLEDs voix, pad mécanique 8×4 avec LEDs RGB, 8 boutons voix, 5 boutons globaux
-- **Bridge I/O** : Arduino Mega 2560 (ou RP2040 en alt build)
-- **MIDI** : dongle USB-MIDI en Phase 1-2, sortie DIN via GPIO en Phase 4+
+**Version 0.9** — design finalized, components on order, assembly phase starting.
 
-Le module se pose ou se clipse au-dessus du Perkons, aligné sur ses 45cm de large.
+This project is in active development. The hardware architecture and software specifications are documented (see [Documentation](#documentation) below), but no firmware or software has been released yet. The repository currently contains the design and technical documentation.
 
-## Philosophie
+---
 
-- **Overlay non-destructive** : le Perkons reste un Perkons
-- **Musicien virtuel** : PërKompanion joue des knobs à côté de l'humain, ne remplace rien
-- **Pas de saisie de secrétariat** : toute feature qui demande de remplir des champs pendant un jam est suspecte
-- **Open source MIT** : partage, reproductibilité, contributions bienvenues
+## Key features (planned)
 
-## État actuel
+- **8×4 Cherry MX trigger pad** with 8 voice selectors and 5 mode buttons integrated into an okoumé wood panel
+- **8 voice columns** (V1–V4 physical through the Perkons, V5–V8 virtual) with individual OLED displays and encoders
+- **128 hotcues library** stored in PSRAM for instant triggering
+- **Motion recording** to capture live parameter automations
+- **Multi-slot DSP chain** per voice with 13 effect types
+- **Deep MIDI routing** via a 7-inch touchscreen interface
+- **Fail-safe mode**: remains playable even if the Pi or Teensy stops responding — the Perkons stays autonomous
 
-- Reverse engineering du format `.KIT` du Perkons (firmware v1.2) : structure Protocol Buffers décodée, 90% des paramètres mappés
-- Mapping complet des CC MIDI (single + multi mode) documenté
-- Budget MIDI Perkons caractérisé : encaisse 800+ messages/sec sans artefact, validation du scénario multi-LFO ambitieux
-- Spec v0.3 complète disponible dans `docs/`
+---
 
-Le code n'existe pas encore. Le projet démarre publiquement maintenant.
+## Hardware architecture
+
+- **Teensy 4.1 Fully Loaded (32 MB PSRAM)**: real-time core for MIDI, audio DSP, sequencing, hotcues
+- **Raspberry Pi 5**: user interface (Chromium kiosk mode on a 7-inch touchscreen), hotcue library management
+- **Audio path**: 2× PCM1808 (4 inputs from Perkons) + 6× PCM5102A (12 outputs) + 1× TPA6120 headphone amplifier
+- **IO expansion**: 20× MCP23S17 on 3 SPI chains for buttons, LEDs, encoders
+- **Panel**: 450×370 mm matte black acrylic base plate + 190×115 mm okoumé plywood module for the 9×5 button grid
+- **MIDI**: 1 IN + 1 OUT DIN connected to the Perkons via ESI M8U eX router
+
+Full details in [`panel_design.md`](panel_design.md) and [`teensy_pinout.md`](teensy_pinout.md).
+
+---
 
 ## Roadmap
 
-| Phase | Objectif | Statut |
-|-------|----------|--------|
-| 0 | Caractérisation MIDI + préparation | ✅ en cours |
-| 1 | MVP moniteur basique | 🔜 |
-| 2 | Moniteur complet avec snapshots | 🔜 |
-| 2.5 | Premier LFO musical | 🔜 |
-| 3 | Premier module hardware breadboard | 🔜 |
-| 4 | Panneau hardware complet | 🔜 |
-| 5 | Moteur de LFOs externes | 🔜 |
-| 6 | Hybrid Kit Mode + Pad fonctionnel | 🔜 |
-| 7 | Scenes/Setlist + Kit Editor | 🔜 |
-| 8 | Documentation et lancement public | 🔜 |
+- **Phase 0** (current): documentation, architecture freeze, component sourcing
+- **Phase 1**: Teensy + Pi bring-up, basic MIDI routing, screen display
+- **Phase 2**: virtual voices, hotcue engine, basic DSP
+- **Phase 3**: full DSP chain, motion recording, advanced routing
+- **Phase 4**: final enclosure, performance polish, public release
 
-Estimation globale : 14-18 mois de développement solo en parallèle d'un job.
-
-## Matériel de référence
-
-- Erica Synths Perkons HD-01 (firmware v1.2)
-- Documentation officielle : [erica-synths.lv](https://www.erica-synths.lv/shop/desktop-synthesizers-and-accessories/perkons-hd-01/)
-
-## Licence
-
-[MIT](LICENSE) — libre d'utilisation, modification, redistribution.
-
-## Auteur
-
-Alexandre de Sauvignac — producteur hardtek / free tekno, basé en France.
+See [`PERKOMPANION_VISION.md`](PERKOMPANION_VISION.md) for the detailed roadmap.
 
 ---
 
-## English summary
+## Documentation
 
-PërKompanion is a hardware + software companion that turns the Erica Synths Perkons HD-01 into an augmented instrument, without modifying its native behavior.
+The design and technical specifications live in this repository:
 
-Key features in development :
-- Multi-LFO modulation (independent per voice and per parameter)
-- Step-1 synchronized transitions for all changes
-- Voice-level kit hot-swapping (Hybrid Kit Mode)
-- Real-time parameter monitoring with live vs stored comparison
+- [`PERKOMPANION_VISION.md`](PERKOMPANION_VISION.md) — Product vision, features, roadmap, BOM
+- [`PERKOMPANION_PHASE0.md`](PERKOMPANION_PHASE0.md) — Foundational technical decisions
+- [`PERKOMPANION_PROTOCOL_TABLES.md`](PERKOMPANION_PROTOCOL_TABLES.md) — Reference tables (MIDI, protocol, IDs)
+- [`panel_design.md`](panel_design.md) — Mechanical panel layout and dimensions
+- [`teensy_pinout.md`](teensy_pinout.md) — Teensy 4.1 GPIO assignments
+- [`midi_hardware.md`](midi_hardware.md) — MIDI DIN interface circuit
 
-Built around Raspberry Pi 5 + touch screen + custom hardware panel. Communicates with the Perkons via MIDI DIN.
+---
 
-Open source, MIT licensed. Contributions welcome once the project reaches Phase 2.
+## Build your own
 
-Project started April 2026. First usable release expected late 2026 / early 2027.
+A full build guide will be published once Phase 1 is validated. In the meantime, the documentation above should give enough information to start sourcing components and planning a build. Feel free to open an issue if you want to follow along or adapt the project for your own setup.
+
+---
+
+## About the development
+
+Perkompanion is designed and built by Sauvignac, an amateur musician passionate about techno and hardware synthesizers for over twenty years, with no formal background in electronics or embedded development.
+
+The architecture, firmware, and documentation are developed with the assistance of [Claude](https://www.anthropic.com/claude) (Anthropic), used as a design partner to navigate technical decisions, explore trade-offs, and structure implementation details. Every design choice and artistic direction remains Sauvignac's own — Claude is a tool, not a co-author.
+
+This project is also meant as a small demonstration that ambitious hardware builds are becoming accessible to non-engineers when AI assistance is used thoughtfully.
+
+---
+
+## License
+
+MIT License. See [`LICENSE`](LICENSE) for details.
+
+---
+
+## Contact
+
+Issues and discussions welcome on this repository.
