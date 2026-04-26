@@ -345,7 +345,7 @@ Distinctes du REC live :
 - **Hauteur** : 37 cm (2cm de plus que Perkons 35cm)
 - **Épaisseur** : acrylique 3mm noir mat (final) ou transparent (proto)
 
-Fabrication : FabLab Poitiers (20 min de Dissay), découpe laser + gravures.
+Fabrication : Sculpteo
 
 ### Composition par zones
 
@@ -708,7 +708,7 @@ Les autres emplacements accueillent des **caps noirs esthétiques** (existent po
 
 ### Approche
 
-**Prototypage sur breadboard TOUT en tact 6×6mm pas 2.54mm** jusqu'à validation firmware.
+**Prototypage sur breadboard TOUT en pas 2.54mm** jusqu'à validation firmware. Sauf Cherry MX.
 
 **Avantages** :
 - Breadboard/perfboard friendly
@@ -719,9 +719,9 @@ Les autres emplacements accueillent des **caps noirs esthétiques** (existent po
 **En Phase 4** :
 - Migration Cherry MX Brown RGB pour pad 32 + 5 boutons critiques
 - SJMS 8×8 avec LED pour boutons techniques (optionnel)
-- Plate acrylique noir mat 3mm découpée FabLab
+- Plate acrylique noir mat 3mm découpée Sculpteo
 
-### Plate FabLab Poitiers
+### Plate Sculpteo
 
 **v0.8** : usiner **dès le début du projet**, pas en fin.
 
@@ -735,12 +735,12 @@ Les autres emplacements accueillent des **caps noirs esthétiques** (existent po
 - **v1 prototype** : acrylique 3mm transparent (~15€)
 - **v2 finale** : acrylique 3mm noir mat + gravures (~25€)
 
-### FabLab Poitiers
 
-- Distance : 20 min de Dissay
-- Machines : découpeuse laser CO2
-- Logiciel : DXF et SVG
-- Tarif : ~5-15€/h ou au m²
+
+
+
+
+
 
 ### Dimensions critiques
 
@@ -762,7 +762,7 @@ Les autres emplacements accueillent des **caps noirs esthétiques** (existent po
 Laser CO2 acrylique 3mm : kerf ~0.1-0.2 mm
 Dessiner à 14.00 mm, résultat 14.05-14.15 mm (switches clippent bien).
 
-Valider avec FabLab lors de première découpe.
+
 
 ---
 
@@ -1013,7 +1013,7 @@ On peut reporter à plus tard les 5× PCM5102A supplémentaires (ne garder que 1
 **ICs authentiques (ne pas prendre sur AliExpress)** :
 - 22× MCP23S17-E/SP DIP-28 (20 utiles + 2 spare) — 40€
 - 2× H11L1M opto-coupleur DIP-6 (MIDI IN) — 3€
-- 2× SN74AHCT125N DIP-14 (level shifter NeoPixel) — 2€
+
 - 3× NE5532P DIP-8 (op-amp audio spare) — 1.50€
 
 **Supports DIP (montage/démontage facile)** :
@@ -1027,7 +1027,7 @@ On peut reporter à plus tard les 5× PCM5102A supplémentaires (ne garder que 1
 - 100× résistances 10 KΩ 1% (pull-ups) — 1.50€
 - 100× résistances 220Ω 1% (LEDs) — 1.50€
 - 10× résistances 33Ω 1% (MIDI OUT) — 0.30€
-- 5× résistances 470Ω (NeoPixel série) — 0.25€
+
 - 50× condensateurs électrolytiques 10 µF / 16V radial (Panasonic/Rubycon) — 5€
 - 100× condensateurs céramiques 100 nF X7R (découplage) — 3€
 - 20× condensateurs électrolytiques 47 µF / 16V (bulk audio) — 3€
@@ -1137,7 +1137,7 @@ On peut reporter à plus tard les 5× PCM5102A supplémentaires (ne garder que 1
 
 - Plate test 15×15 cm noir mat (validation dimensions avant plate finale) — 20€
 - Plate principale 450×370 mm acrylique 3mm noir mat avec gravures — 70€
-- Module pad 190×115 mm acrylique 3mm violet translucide satiné (v0.9 redimensionné 9×5) — 20€
+- Module pad 190×115 mm peuplier 5mm (v0.9) — 20€
 
 **Total Sculpteo** : **~110€**
 
@@ -1195,13 +1195,13 @@ PërKompanion v0.8 consolide la vision d'un instrument live complet pour le Perk
 
 **Prototypage breadboard** valide la logique firmware avant investissement final.
 
-**Plate FabLab dessinée dès le début** anticipe v2+ et v3+ (tous les jacks audio, MIDI, digital) sans refonte future.
+**Plate Sculpteo dessinée dès le début** anticipe v2+ et v3+ (tous les jacks audio, MIDI, digital) sans refonte future.
 
 **Faisable par un non-électronicien** grâce à :
 - Prototypage tact 6×6 (pas de CMS en Phase 1-3)
 - Modules breakout pour audio (PCM1808, PCM5102A, TPA6120)
 - MCP23S17 en DIP-28 (soudable à la main sans difficulté)
-- Plate acrylique FabLab (pas de PCB mécanique complexe)
+- Plate acrylique Sculpteo (pas de PCB mécanique complexe)
 - Anticipation v2+/v3+ (pas de refonte plate)
 
 **Budget v1 complet : ~1065-1135€**

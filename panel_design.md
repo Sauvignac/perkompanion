@@ -137,7 +137,7 @@ R4     │ M5 │P24 │P25 │P26 │P27 │P28 │P29 │P30 │P31 │
 
 **Pilotage** : ON/OFF par keycap via MCP23S17.
 
-**Pas de couleur variable par touche** : les LEDs sont **toutes blanches**. La couleur perçue est donnée par la **couleur du keycap R4 translucide** (noir, rouge, bleu selon zone).
+**Pas de couleur variable par touche** : les LEDs sont **toutes blanches**. La couleur perçue est donnée par la **couleur du keycap R4 translucide** (noir, rouge, vert, jaune selon zone à définir à l'usage).
 
 **Effet visuel** :
 - LED éteinte : keycap translucide visible mais peu contrasté sur plate noire

@@ -435,7 +435,7 @@ Le Teensy boote instantanément (<1 seconde).
 
 **Actions au démarrage** :
 1. Initialisation GPIO (matrice pad, encodeurs, boutons)
-2. Initialisation SPI (OLEDs voix) et I2C (OLED master, TCA9548A)
+2. Initialisation SPI (OLEDs voix et master)
 3. Initialisation audio (codec I2S, v2+)
 4. Initialisation MIDI (UART)
 5. Scan initial de l'état hardware
@@ -1185,7 +1185,7 @@ Si polyphonie_max = 16 et 4 voix virtuelles assignées et actives : 12 hotcues p
 - MOSI, SCK, DC, RST partagés
 - Refresh 50+ fps possible, dirty rect optionnel
 
-L'OLED master BPM reste en I2C (taille plus petite, refresh peu fréquent, via TCA9548A).
+
 
 ### Validation hardware à faire en Phase 1
 
@@ -1194,11 +1194,11 @@ Avant d'écrire la logique applicative, valider les briques de base :
 1. **Test MIDI clock** : clock FL → ESI → Teensy MIDI IN. Mesure jitter <1 ms via oscilloscope ou LED flash sur chaque tick.
 2. **Test MIDI OUT Teensy** : Teensy génère CC test → ESI → Perkons. Vérifier arrivée sans transit Pi.
 3. **Test 4 OLEDs SPI** : afficher "V1", "V2", "V3", "V4" simultanément sur les 4 OLEDs.
-4. **Test I2C master OLED** : afficher "BPM 140" sur l'OLED 0.96" via TCA9548A.
+4. **Test SPI master OLED** : afficher "BPM 140" sur l'OLED.
 5. **Test scan matrice pad** : toutes les 32 touches détectées sans ghosting.
 6. **Test encodeurs** : 16 encodeurs voix détectés avec acceleration.
 7. **Test USB série Pi ↔ Teensy** : HEARTBEAT bidirectionnel, 1000 msg/s sans perte.
-8. **Test NeoPixel** : 32 LEDs du pad + 16 indicateurs contrôlés individuellement.
+
 
 Chaque test est un "Hello World" matériel. Si l'un échoue, debugger avant de continuer.
 
@@ -1239,10 +1239,10 @@ Avant d'écrire la première ligne de code applicatif, s'assurer que ces points 
 - [ ] Clock MIDI arrive au Teensy direct (jitter <1ms validé)
 - [ ] CCs sortants Teensy vont au Perkons sans transit Pi (test scope)
 - [ ] 4 OLEDs voix en SPI fonctionnelles
-- [ ] OLED master I2C fonctionnelle via TCA9548A
-- [ ] Matrice pad 8×4 scanne sans ghosting
+
+- [ ] Matrice pad 9×5 scanne sans ghosting
 - [ ] 32 encodeurs détectés
-- [ ] NeoPixel 32 LEDs contrôlables individuellement
+
 
 ### Protocole et communication
 

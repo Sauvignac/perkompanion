@@ -492,7 +492,7 @@ Rangée 4 : 0x18 0x19 0x1A 0x1B 0x1C 0x1D 0x1E 0x1F
 
 ### LEDs (led_id : 2 bytes)
 
-**LEDs pad (0x0000-0x001F)** : correspondent aux pad_id (NeoPixel WS2812B).
+ALORS LA IL FAUT VRAIMENT VERIFIER CAR ON A DESORMAIS DES LEDS A CHAQUE TOUCHE CHERRY MX OU PRESQUE
 
 **LEDs indicateurs voix (0x0100-0x01FF)** : 4 LEDs par voix (Panic, Freeze, MODE, Indicateur mode).
 
@@ -508,8 +508,8 @@ Rangée 4 : 0x18 0x19 0x1A 0x1B 0x1C 0x1D 0x1E 0x1F
 | 0x01 | SH1106 128×64 V2 | SPI (CS Teensy pin 17) |
 | 0x02 | SH1106 128×64 V3 | SPI (CS Teensy pin 22) |
 | 0x03 | SH1106 128×64 V4 | SPI (CS Teensy pin 23) |
-| 0x10 | SSD1306 128×32 Master BPM | I2C (via TCA9548A canal 0) |
-
+| 0x10 | SSD1306 128×32 Master BPM | I2C (via TCA9548A canal 0) |<=I2C remplacé par un nouveau SPI <=
+=>I2C remplacé par un nouveau SPI <=
 ---
 
 ## 4. **Encoding des valeurs sur le fil — SECTION CRITIQUE**
@@ -1012,7 +1012,7 @@ status values :
 | 0x07 | OLED V4 |
 | 0x08 | OLED Master |
 | 0x09 | MCP23S17 (expander) |
-| 0x0A | NeoPixel |
+| 0x0A | NeoPixel | <=NeoPixel est SUPPRIMé>
 | 0x0B | I2S Audio |
 
 ---
