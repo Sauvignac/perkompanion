@@ -1,0 +1,39 @@
+# Notes privées — JAMAIS committées
+*_NOTES_PRIVEES.md
+STRATEGIE_*.md
+BUDGET_*.md
+*.private.md
+
+# Fichiers de travail Claude Code futurs
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Éditeurs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node.js
+node_modules/
+npm-debug.log*
+
+# Logs
+*.log
+~/.pm2/
+
+# Builds Teensy futurs
+.pio/
+build/
+*.hex
+
+# Fichiers temporaires
+*.tmp
+*.bak
+
+
+_archive/
