@@ -1,0 +1,278 @@
+# profile_template_with_docs.yaml
+#
+# ╔════════════════════════════════════════════════════════════════════════════╗
+# ║   PërKompanion — Device Profile Template (auto-documenté)                  ║
+# ║   Version 1.0.0 du schéma — avril 2026                                     ║
+# ╚════════════════════════════════════════════════════════════════════════════╝
+#
+# Ce fichier sert de référence pour rédiger un nouveau Device Profile.
+# Tous les champs sont annotés en place :
+#   [REQUIRED]  → champ obligatoire
+#   [OPTIONAL]  → champ optionnel (peut être omis ; ne pas mettre `null`)
+#   [DEFAULT]   → valeur par défaut quand le champ est omis
+#
+# Pour un fichier de profile réel, supprime tous les commentaires
+# explicatifs. Pour la spec narrative complète, voir device_profile_schema.md.
+#
+# Conventions YAML adoptées dans tout le framework :
+#   - YAML 1.2 strict
+#   - indentation 2 espaces
+#   - chaînes de caractères en double-quotes : "valeur"
+#     (évite le "Norway problem" : `no` parsé en false)
+#   - anchors `&name` et aliases `*name` autorisés et encouragés pour
+#     factoriser les structures isomorphes (voix Perkons, tracks audio
+#     Digitakt, parts Electribe)
+#   - pas de templating runtime, pas de mini-DSL : YAML reste un format
+#     de données
+
+# ────────────────────────────────────────────────────────────────────────────
+# 1. Bloc `profile` — métadonnées et identité du device
+# ────────────────────────────────────────────────────────────────────────────
+profile:
+  # [REQUIRED] Identifiant stable, snake_case, unique dans le registre.
+  # Recommandation : "<vendor>_<model>" en minuscules ASCII.
+  # Exemples : "perkons_hd01", "elektron_digitakt_ii", "behringer_td3_mo"
+  id: "vendor_model"
+
+  # [REQUIRED] Nom commercial du device, affiché dans l'UI.
+  name: "Vendor Model XYZ"
+
+  # [REQUIRED] Version SemVer du profile lui-même (pas du firmware device).
+  # Incrémenté à chaque modification publiée du profile.
+  version: "0.1.0"
+
+  # [REQUIRED] Firmware cible du device. Format libre.
+  # Conventions utiles : "1.2", "OS_2.x", "TO_VALIDATE" en pré-validation.
+  device_firmware: "1.0"
+
+  # [REQUIRED] Auteur (pseudonyme accepté).
+  author: "ContributorName"
+
+  # [REQUIRED] Licence du profile. MIT recommandé pour l'écosystème PërKompanion.
+  license: "MIT"
+
+  # [REQUIRED] Couleur d'accent du device, propagée sur OLEDs voix, LEDs pad
+  # et écran 7". Choix limité à la palette Cyber Brutalist Sauvignac.
+  # Palette pressentie (voir PERKOMPANION_NOTES_PRIVEES.md "Couleur par profile") :
+  #   #FF0040 Rouge Sauvignac     — Perkons (réservé)
+  #   #FF00AA Magenta             — hotcues internes
+  #   #FF4500 Orange              — signature universelle
+  #   #A8FF00 Vert acide          — Digitakt (réservé)
+  #   #FFD700 Jaune               — TD-3 (réservé)
+  #   #8B00FF Violet              — Electribe (réservé)
+  #   #EEEEEE Blanc cassé         — fallback / neutre
+  default_color: "#FF4500"
+
+  # [OPTIONAL] [DEFAULT: runtime alloue] Hint au runtime pour l'allocation
+  # du slot param_id (0..3 en v1, slots 0x0000-0x03FF, 0x0400-0x07FF, etc.).
+  # Le runtime peut ignorer ce hint en cas de conflit avec un autre profile
+  # déjà chargé. Ne pas considérer comme une réservation.
+  preferred_slot: 0
+
+  # [REQUIRED] Liste des scopes de snapshot applicables au device.
+  # Valeurs supportées : "track", "device", "page", "global".
+  # Un device qui n'a qu'une seule track expose tout de même les deux scopes
+  # (sémantique préservée : "snapshot ce slot" ≠ "snapshot la machine").
+  snapshot_scopes: ["track", "device"]
+
+# ────────────────────────────────────────────────────────────────────────────
+# 2. Bloc `track_labels` — vocabulaire UI pour les "tracks"
+# ────────────────────────────────────────────────────────────────────────────
+# L'abstraction commune s'appelle `tracks` dans le format. Chaque device
+# choisit le nom vernaculaire affiché à l'utilisateur.
+# Exemples : voice/voices, track/tracks, part/parts, voice/voices.
+track_labels:
+  singular: "track"   # [REQUIRED]
+  plural:   "tracks"  # [REQUIRED]
+
+# ────────────────────────────────────────────────────────────────────────────
+# 3. Bloc `notes` — documentation libre du profile
+# ────────────────────────────────────────────────────────────────────────────
+# Tout est [OPTIONAL]. Ce bloc sert à documenter ce que le profile NE
+# couvre PAS, autant que ce qu'il couvre. Particulièrement précieux pour
+# les contributeurs MIT qui reprennent un profile existant.
+#
+# Champs reconnus mais non normatifs (le runtime n'en lit aucun) :
+#   midi_mode_assumed              — mode MIDI assumé par le profile
+#   midi_mode_setup                — comment configurer ce mode sur le device
+#   alternate_modes_known          — autres modes possibles, hors-scope du profile
+#   to_validate_against_midi_impl_chart — points à vérifier contre la fiche officielle
+#   not_midi_exposed               — features hardware non adressables en MIDI
+#   midi_messages_not_modeled      — messages MIDI acceptés mais non décrits ici
+#   audio_in_routing               — informations audio (hors-MIDI)
+notes:
+  midi_mode_assumed: "multi_channel"
+  to_validate_against_midi_impl_chart:
+    - "Numéros CC exacts pour les paramètres haute-résolution."
+
+# ────────────────────────────────────────────────────────────────────────────
+# 4. Bloc `tracks` — collection des "tracks" pilotables
+# ────────────────────────────────────────────────────────────────────────────
+# Un track représente une unité de contrôle adressable (voix, track, part,
+# monosynth complet…). Chaque entrée ci-dessous décrit une track distincte.
+
+# Anchor optionnel pour factoriser des params communs.
+# Recommandé pour les devices à tracks isomorphes (Perkons, Digitakt audio,
+# Electribe, etc.). À éviter sinon.
+example_track_params: &example_track_params
+  - { name: "Volume", cc: 7,  curve: "exp",    type: "continuous" }
+  - { name: "Pan",    cc: 10, curve: "linear", type: "continuous_bipolar" }
+  - { name: "Cutoff", cc: 74, curve: "log_strong", type: "continuous" }
+
+tracks:
+  - id: "t1"                  # [REQUIRED] identifiant stable, snake_case
+    label: "T1"               # [REQUIRED] label court pour l'UI (1-3 chars idéal)
+    kind: "voice"             # [REQUIRED] string libre, free-form. Sert au
+                              #            groupage visuel UI. Le runtime ne
+                              #            valide pas son contenu.
+                              #            Exemples observés dans les profiles
+                              #            de référence : "voice", "audio",
+                              #            "midi_out", "part", "monosynth".
+
+    addressing:               # [REQUIRED] décrit COMMENT cibler la track en MIDI
+      midi_channel: 1         # [REQUIRED] canal MIDI (1-16)
+
+      # [OPTIONAL] Liste de messages MIDI préfixe envoyés AVANT chaque
+      # message de paramètre, pour adresser la bonne track.
+      # Cas typique : Single Channel + Part Select sur Korg Electribe.
+      # Si absent ou liste vide, aucun préfixage.
+      preface:
+        - { mechanism: "nrpn", msb: 0, lsb: 1, data_msb: 0 }
+
+    # [OPTIONAL] [DEFAULT: 0] Offset CC appliqué à TOUS les params de la track.
+    # Permet de réutiliser un anchor de params entre tracks isomorphes
+    # quand le device numérote ses voix par offset constant.
+    # Exemple Perkons : voice_params définit CCs 70..80 pour V1, et V2 utilise
+    # cc_offset:11 pour décaler vers 81..91.
+    # NE PAS utiliser quand les tracks ne sont pas isomorphes.
+    cc_offset: 0
+
+    # [REQUIRED] Liste des paramètres pilotables de cette track.
+    # Voir section 5 ci-dessous pour la grammaire d'un param.
+    params: *example_track_params
+
+  # … autres tracks …
+
+# ────────────────────────────────────────────────────────────────────────────
+# 5. Grammaire d'un `param`
+# ────────────────────────────────────────────────────────────────────────────
+# Un param est un dictionnaire avec les champs suivants. Les exemples sont
+# fournis ci-dessous comme références ; ne pas inclure cette section dans
+# un profile réel, c'est juste de la doc.
+#
+# CHAMPS COMMUNS À TOUS LES MÉCANISMES :
+#   name        [REQUIRED] string  — identifiant lisible humain, snake_case
+#                                     ou PascalCase. Affiché en UI si pas
+#                                     remplacé par les settings utilisateur.
+#   curve       [REQUIRED] string  — courbe de réponse appliquée par le
+#                                     runtime entre encodeur et MIDI.
+#                                     Valeurs : "none", "linear", "exp",
+#                                     "log", "log_strong", "scurve".
+#                                     "none" : aucun mapping (pour enum/bool).
+#   type        [REQUIRED] string  — type sémantique du paramètre.
+#                                     Valeurs : "continuous", "continuous_bipolar",
+#                                     "integer", "boolean", "enum".
+#   range       [OPTIONAL] [a, b]  — bornes pour les types numériques.
+#                                     Default selon type : continuous [0,1],
+#                                     continuous_bipolar [-1,+1], integer [0,127].
+#   values      [REQUIRED si enum] [string,…] — labels affichés en UI pour
+#                                     les valeurs successives 0,1,2,…
+#   resolution  [OPTIONAL] integer — résolution effective en bits.
+#                                     Défaut : 7 pour CC, 14 pour NRPN.
+#
+# CHAMPS SPÉCIFIQUES AU MÉCANISME :
+#   mechanism   [OPTIONAL] [DEFAULT: "cc"] string — type de message MIDI.
+#                                     Valeurs supportées en v1 : "cc", "nrpn".
+#                                     Extensions futures envisagées (non
+#                                     implémentées) : "pitch_bend",
+#                                     "aftertouch", "sysex". Voir section 7.
+#
+#   Si mechanism="cc"   :  cc       [REQUIRED] integer 0-127
+#   Si mechanism="nrpn" :  nrpn_msb [REQUIRED] integer 0-127
+#                          nrpn_lsb [REQUIRED] integer 0-127
+
+# Exemples concrets (NE PAS recopier dans un profile réel) :
+example_params_for_doc:
+  # CC continu unipolar
+  - { name: "Volume", cc: 7, curve: "exp", type: "continuous" }
+
+  # CC continu bipolar
+  - { name: "Pan", cc: 10, curve: "linear", type: "continuous_bipolar" }
+
+  # CC entier avec range explicite
+  - { name: "Sample_Slot", cc: 19, curve: "none", type: "integer", range: [0, 127] }
+
+  # CC booléen
+  - { name: "Mute", cc: 94, curve: "none", type: "boolean" }
+
+  # CC enum (curve="none" car pas d'interpolation)
+  - { name: "Filter_Type", cc: 76, curve: "none", type: "enum",
+      values: ["LP", "BP", "HP", "Notch"] }
+
+  # CC mechanism explicite (équivalent à l'omission, pour profiles mixtes)
+  - { name: "Cutoff", mechanism: "cc", cc: 74, curve: "log_strong", type: "continuous" }
+
+  # NRPN haute-résolution 14 bits
+  - { name: "Pitch_Fine", mechanism: "nrpn", nrpn_msb: 0, nrpn_lsb: 16,
+      curve: "linear", type: "continuous_bipolar", resolution: 14 }
+
+# ────────────────────────────────────────────────────────────────────────────
+# 6. Bloc `global_param_groups` — paramètres non rattachés à une track
+# ────────────────────────────────────────────────────────────────────────────
+# [OPTIONAL] Tout entier. Si le device n'a pas de globals exposés en MIDI
+# (cas Perkons, TD-3-MO), la section est ABSENTE du fichier (pas de stub vide).
+#
+# Un groupe représente un cluster cohérent de paramètres globaux (FX bus,
+# Master, Common, etc.). Plusieurs groupes peuvent coexister sur des canaux
+# MIDI différents. Chaque groupe utilise le même bloc `addressing` que les
+# tracks (avec preface optionnel) et la même grammaire de `params`.
+
+global_param_groups:
+  - id: "fx_bus"              # [REQUIRED]
+    label: "FX Bus"           # [REQUIRED]
+    addressing:               # [REQUIRED] même grammaire que tracks.addressing
+      midi_channel: 16
+      # preface: optionnel comme pour tracks
+    params:                   # [REQUIRED]
+      - { name: "Reverb_Mix", cc: 91, curve: "exp", type: "continuous" }
+      - { name: "Delay_Mix",  cc: 93, curve: "exp", type: "continuous" }
+
+# ────────────────────────────────────────────────────────────────────────────
+# 7. Bloc `quirks` — comportements connus du device
+# ────────────────────────────────────────────────────────────────────────────
+# [OPTIONAL] Dictionnaire ouvert. Aucune clé n'est réservée par le format —
+# c'est un espace libre pour signaler des bugs firmware, des limitations,
+# des particularités d'implémentation.
+# Le runtime peut consulter certaines clés conventionnelles si elles existent.
+#
+# Conventions observées dans les profiles de référence :
+#   pot_catch_broken              boolean — Perkons fw v1.2
+#   midi_only_partial             boolean — features hardware non en MIDI
+#   has_nrpn_only_params          boolean — paramètres haute-rés NRPN-only
+#   requires_part_select_preface  boolean — Korg Single Channel mode
+#
+# Si le device n'a pas de quirks connus, la section est ABSENTE.
+
+quirks:
+  pot_catch_broken: false
+
+# ────────────────────────────────────────────────────────────────────────────
+# Extensions futures envisagées (non implémentées en v1)
+# ────────────────────────────────────────────────────────────────────────────
+# Les éléments suivants ne sont PAS supportés par le schéma v1 mais sont
+# documentés ici pour signaler les directions d'évolution prévues :
+#
+# • mechanism: "pitch_bend"   — message Pitch Bend natif (14 bits).
+#                                Déclencheur pressenti : profile Hydrasynth.
+# • mechanism: "aftertouch"   — Channel Aftertouch et/ou Polyphonic.
+#                                Déclencheur pressenti : profile Hydrasynth.
+# • mechanism: "sysex"        — messages SysEx structurés (pour devices
+#                                qui exposent des paramètres uniquement en
+#                                SysEx). Format à définir le moment venu.
+# • slots > 4 simultanés      — extension du bloc 0x7000 si plus de 4
+#                                profiles externes simultanés en v5+.
+#
+# Ces extensions seront introduites par stress-test bottom-up (un device
+# qui en a réellement besoin), pas par anticipation.
+
+# Fin du template.

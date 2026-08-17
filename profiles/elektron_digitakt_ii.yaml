@@ -1,0 +1,158 @@
+# profiles/elektron_digitakt_ii.yaml
+# Elektron Digitakt II — firmware OS 1.x
+# Profile #2 du framework — paradigme Multi Channel.
+#
+# Toutes les valeurs CC ci-dessous sont des hypothèses cohérentes avec
+# les conventions Elektron mais NON validées contre la fiche MIDI
+# Implementation officielle du Digitakt II. Validation reportée à la
+# phase de test runtime, machine en main (cf. arbitrage chef d'orchestre).
+
+profile:
+  id: "elektron_digitakt_ii"
+  name: "Elektron Digitakt II"
+  version: "0.1.0"
+  device_firmware: "OS_1.x_TO_VALIDATE"
+  author: "Sauvignac"
+  license: "MIT"
+  default_color: "#A8FF00"     # Vert acide (palette Cyber Brutalist)
+  preferred_slot: 1
+  snapshot_scopes: ["track", "device"]
+
+track_labels:
+  singular: "track"
+  plural: "tracks"
+
+notes:
+  midi_mode_assumed: "multi_channel"
+  alternate_modes_known:
+    - "Auto Channel : toutes tracks sur 1 canal, sélection via Program
+       Change. Hors-scope v1 — incompatible avec pilotage simultané."
+  to_validate_against_midi_impl_chart:
+    - "Numéros CC exacts pour chaque paramètre (les valeurs ci-dessous
+       suivent les conventions Elektron mais ne sont pas vérifiées)."
+    - "Canal MIDI du groupe FX/Master (placeholder canal 15 utilisé)."
+    - "Existence et adressage des paramètres haute-résolution NRPN."
+  not_midi_exposed:
+    - "Pattern length / scale / per-track length (hardware-side)."
+    - "Trig conditions (manipulables hardware seulement)."
+    - "Performance Macros assignments (les assignations elles-mêmes ;
+       les valeurs des macros une fois assignées sont CC-controllable)."
+
+# === Templates ================================================================
+# Deux familles de tracks isomorphes : 8 audio + 8 midi_out.
+
+audio_track_params: &audio_track_params
+  # Mute / level
+  - { name: "Mute",            cc: 94,  curve: "none",   type: "boolean" }
+  - { name: "Track_Level",     cc: 95,  curve: "exp",    type: "continuous" }
+  - { name: "Track_Pan",       cc: 10,  curve: "linear", type: "continuous_bipolar" }
+  # Source
+  - { name: "Tune",            cc: 16,  curve: "linear", type: "continuous_bipolar" }
+  - { name: "Play_Mode",       cc: 17,  curve: "none",   type: "enum",
+      values: ["FWD", "REV", "PINGPONG", "FOLD"] }
+  - { name: "Bit_Reduction",   cc: 18,  curve: "linear", type: "continuous" }
+  - { name: "Sample_Slot",     cc: 19,  curve: "none",   type: "integer", range: [0, 127] }
+  - { name: "Start",           cc: 20,  curve: "linear", type: "continuous" }
+  - { name: "Length",          cc: 21,  curve: "linear", type: "continuous" }
+  - { name: "Loop_Pos",        cc: 22,  curve: "linear", type: "continuous" }
+  # Filter
+  - { name: "Filter_Freq",     cc: 74,  curve: "log_strong", type: "continuous" }
+  - { name: "Filter_Reso",     cc: 75,  curve: "linear",     type: "continuous" }
+  - { name: "Filter_Type",     cc: 76,  curve: "none",       type: "enum",
+      values: ["LP2", "LP1", "BP", "HP1", "HP2", "BS", "PK"] }
+  - { name: "Filter_EnvDepth", cc: 77,  curve: "linear",     type: "continuous_bipolar" }
+  - { name: "Filter_Attack",   cc: 78,  curve: "exp",        type: "continuous" }
+  - { name: "Filter_Decay",    cc: 79,  curve: "exp",        type: "continuous" }
+  - { name: "Filter_Sustain",  cc: 80,  curve: "exp",        type: "continuous" }
+  - { name: "Filter_Release",  cc: 81,  curve: "exp",        type: "continuous" }
+  # Amp
+  - { name: "Amp_Attack",      cc: 84,  curve: "exp",    type: "continuous" }
+  - { name: "Amp_Hold",        cc: 85,  curve: "exp",    type: "continuous" }
+  - { name: "Amp_Decay",       cc: 86,  curve: "exp",    type: "continuous" }
+  - { name: "Amp_Overdrive",   cc: 87,  curve: "scurve", type: "continuous" }
+  # Sends
+  - { name: "Send_Delay",      cc: 90,  curve: "exp",    type: "continuous" }
+  - { name: "Send_Reverb",     cc: 91,  curve: "exp",    type: "continuous" }
+  - { name: "Send_Chorus",     cc: 92,  curve: "exp",    type: "continuous" }
+  # LFO 1
+  - { name: "LFO1_Speed",      cc: 102, curve: "exp",    type: "continuous" }
+  - { name: "LFO1_Multiplier", cc: 103, curve: "none",   type: "enum",
+      values: ["x1","x2","x4","x8","x16","x32","x64","x128","x256","x512","x1k","x2k",
+               "./1","./2","./4","./8","./16","./32","./64","./128","./256","./512","./1k","./2k"] }
+  - { name: "LFO1_Fade",       cc: 104, curve: "linear", type: "continuous_bipolar" }
+  - { name: "LFO1_Dest",       cc: 105, curve: "none",   type: "integer", range: [0, 127] }
+  - { name: "LFO1_Wave",       cc: 106, curve: "none",   type: "enum",
+      values: ["TRI","SIN","SQR","SAW","EXP","RMP","RND"] }
+  - { name: "LFO1_Phase",      cc: 107, curve: "linear", type: "continuous" }
+  - { name: "LFO1_Mode",       cc: 108, curve: "none",   type: "enum",
+      values: ["FREE","TRIG","HOLD","ONE","HALF"] }
+  - { name: "LFO1_Depth",      cc: 109, curve: "linear", type: "continuous_bipolar" }
+
+midi_track_params: &midi_track_params
+  - { name: "Mute",        cc: 94, curve: "none",   type: "boolean" }
+  - { name: "Note",        cc: 3,  curve: "none",   type: "integer", range: [0, 127] }
+  - { name: "Velocity",    cc: 4,  curve: "linear", type: "continuous" }
+  - { name: "Length",      cc: 5,  curve: "linear", type: "continuous" }
+  - { name: "Bank_LSB",    cc: 32, curve: "none",   type: "integer", range: [0, 127] }
+  - { name: "Bank_MSB",    cc: 0,  curve: "none",   type: "integer", range: [0, 127] }
+  - { name: "Program",     cc: 6,  curve: "none",   type: "integer", range: [0, 127] }
+  # 8 CC user-assignable côté Digitakt. Le profile les laisse opaques :
+  # le mapping vers la machine cible (TR-8, Hydrasynth, etc.) appartient
+  # aux settings utilisateur, pas au profile device.
+  - { name: "User_CC1",    cc: 70, curve: "linear", type: "continuous" }
+  - { name: "User_CC2",    cc: 71, curve: "linear", type: "continuous" }
+  - { name: "User_CC3",    cc: 72, curve: "linear", type: "continuous" }
+  - { name: "User_CC4",    cc: 73, curve: "linear", type: "continuous" }
+  - { name: "User_CC5",    cc: 74, curve: "linear", type: "continuous" }
+  - { name: "User_CC6",    cc: 75, curve: "linear", type: "continuous" }
+  - { name: "User_CC7",    cc: 76, curve: "linear", type: "continuous" }
+  - { name: "User_CC8",    cc: 77, curve: "linear", type: "continuous" }
+
+# === Tracks ===================================================================
+
+tracks:
+  - { id: "a1", label: "T1", kind: "audio",    addressing: { midi_channel: 1  }, params: *audio_track_params }
+  - { id: "a2", label: "T2", kind: "audio",    addressing: { midi_channel: 2  }, params: *audio_track_params }
+  - { id: "a3", label: "T3", kind: "audio",    addressing: { midi_channel: 3  }, params: *audio_track_params }
+  - { id: "a4", label: "T4", kind: "audio",    addressing: { midi_channel: 4  }, params: *audio_track_params }
+  - { id: "a5", label: "T5", kind: "audio",    addressing: { midi_channel: 5  }, params: *audio_track_params }
+  - { id: "a6", label: "T6", kind: "audio",    addressing: { midi_channel: 6  }, params: *audio_track_params }
+  - { id: "a7", label: "T7", kind: "audio",    addressing: { midi_channel: 7  }, params: *audio_track_params }
+  - { id: "a8", label: "T8", kind: "audio",    addressing: { midi_channel: 8  }, params: *audio_track_params }
+  - { id: "m1", label: "M1", kind: "midi_out", addressing: { midi_channel: 9  }, params: *midi_track_params }
+  - { id: "m2", label: "M2", kind: "midi_out", addressing: { midi_channel: 10 }, params: *midi_track_params }
+  - { id: "m3", label: "M3", kind: "midi_out", addressing: { midi_channel: 11 }, params: *midi_track_params }
+  - { id: "m4", label: "M4", kind: "midi_out", addressing: { midi_channel: 12 }, params: *midi_track_params }
+  - { id: "m5", label: "M5", kind: "midi_out", addressing: { midi_channel: 13 }, params: *midi_track_params }
+  - { id: "m6", label: "M6", kind: "midi_out", addressing: { midi_channel: 14 }, params: *midi_track_params }
+  - { id: "m7", label: "M7", kind: "midi_out", addressing: { midi_channel: 15 }, params: *midi_track_params }
+  - { id: "m8", label: "M8", kind: "midi_out", addressing: { midi_channel: 16 }, params: *midi_track_params }
+
+# === Global params ============================================================
+
+global_param_groups:
+  - id: "fx_master"
+    label: "FX & Master"
+    addressing:
+      midi_channel: 15           # placeholder, à valider contre fiche officielle
+    params:
+      - { name: "Delay_Time",       cc: 85,  curve: "exp",    type: "continuous" }
+      - { name: "Delay_PingPong",   cc: 86,  curve: "none",   type: "boolean" }
+      - { name: "Delay_Feedback",   cc: 88,  curve: "exp",    type: "continuous" }
+      - { name: "Delay_HPF",        cc: 89,  curve: "log",    type: "continuous" }
+      - { name: "Delay_LPF",        cc: 90,  curve: "log",    type: "continuous" }
+      - { name: "Reverb_PreDelay",  cc: 91,  curve: "exp",    type: "continuous" }
+      - { name: "Reverb_Decay",     cc: 92,  curve: "exp",    type: "continuous" }
+      - { name: "Reverb_HPF",       cc: 93,  curve: "log",    type: "continuous" }
+      - { name: "Reverb_LPF",       cc: 94,  curve: "log",    type: "continuous" }
+      - { name: "Reverb_Mix",       cc: 95,  curve: "linear", type: "continuous" }
+      - { name: "Comp_Threshold",   cc: 111, curve: "linear", type: "continuous" }
+      - { name: "Comp_Attack",      cc: 112, curve: "exp",    type: "continuous" }
+      - { name: "Comp_Release",     cc: 113, curve: "exp",    type: "continuous" }
+      - { name: "Master_Volume",    cc: 119, curve: "exp",    type: "continuous" }
+
+quirks:
+  has_nrpn_only_params: true     # paramètres haute-résolution accessibles
+                                 # uniquement via NRPN — non listés dans v0.1
+                                 # de ce profile, à compléter post-validation
+                                 # fiche MIDI implementation.

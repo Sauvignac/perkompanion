@@ -1,0 +1,263 @@
+# profiles/korg_electribe_2_sampler.yaml
+# Korg Electribe 2 Sampler (grey, 2014) — firmware 2.x
+# Profile #3 du framework — paradigme Single Channel + Part Select.
+#
+# Toutes les valeurs CC et NRPN ci-dessous sont des hypothèses cohérentes
+# avec les conventions Korg mais NON validées contre la fiche MIDI
+# Implementation officielle. Validation reportée à la phase de test
+# runtime, machine en main (cf. arbitrage chef d'orchestre).
+
+profile:
+  id: "korg_electribe_2_sampler"
+  name: "Korg Electribe 2 Sampler"
+  version: "0.1.0"
+  device_firmware: "2.x_TO_VALIDATE"
+  author: "Sauvignac"
+  license: "MIT"
+  default_color: "#8B00FF"     # Violet (palette Cyber Brutalist)
+  preferred_slot: 2
+  snapshot_scopes: ["track", "device"]
+
+track_labels:
+  singular: "part"
+  plural: "parts"
+
+notes:
+  midi_mode_assumed: "single_channel_part_select"
+  alternate_modes_known:
+    - "Multi Channel : 1 part = 1 canal MIDI. Profile alternatif possible
+       si Single Channel pose problème. Hors-scope v0.1."
+  to_validate_against_midi_impl_chart:
+    - "Mécanisme exact de Part Select (NRPN supposé ; alternatives
+       possibles : CC 0/32 Bank Select, Note-on dédié)."
+    - "Numéros NRPN MSB/LSB pour Part Select et paramètres haute-résolution."
+    - "Canal MIDI Common pour groupes globaux IFX/MFX (canal 1 supposé,
+       canal 16 fréquent chez Korg)."
+    - "Liste exacte des types disponibles pour IFX et Master FX."
+  not_midi_exposed:
+    - "Sample loading et édition (USB-only, pas de MIDI)."
+    - "Pattern length / scale per part."
+    - "Motion Sequence en édition (la lecture est par contre influençable
+       via les CCs habituels une fois enregistrée)."
+  audio_in_routing: "Audio In encodeur sur le device, non exposé en MIDI."
+
+# === Templates ================================================================
+# Toutes les parts partagent la même grammaire MIDI côté CC.
+# Le device traite indistinctement parts drum/sample/synth via les mêmes
+# CCs ; le `kind` reste "part" pour l'ensemble.
+#
+# `mechanism` est explicite ici parce que ce profile mélange CC et NRPN.
+# Les profiles précédents (Perkons, Digitakt) sont CC-only et utilisent
+# le default implicite `mechanism: "cc"`.
+
+part_params: &part_params
+  - { name: "Volume",       mechanism: "cc",   cc: 7,   curve: "exp",        type: "continuous" }
+  - { name: "Pan",          mechanism: "cc",   cc: 10,  curve: "linear",     type: "continuous_bipolar" }
+  - { name: "Pitch",        mechanism: "cc",   cc: 12,  curve: "linear",     type: "continuous_bipolar" }
+  - { name: "EG_Time",      mechanism: "cc",   cc: 13,  curve: "exp",        type: "continuous" }
+  - { name: "Filter_Type",  mechanism: "cc",   cc: 14,  curve: "none",       type: "enum",
+      values: ["LP", "HP", "BP", "Thru"] }
+  - { name: "Filter_Cutoff",mechanism: "cc",   cc: 74,  curve: "log_strong", type: "continuous" }
+  - { name: "Filter_Reso",  mechanism: "cc",   cc: 71,  curve: "linear",     type: "continuous" }
+  - { name: "Filter_EG",    mechanism: "cc",   cc: 75,  curve: "linear",     type: "continuous_bipolar" }
+  - { name: "Mod_Type",     mechanism: "cc",   cc: 16,  curve: "none",       type: "enum",
+      values: ["LFO", "BPM_LFO", "Decay", "Pitch", "Pan", "RingMod"] }
+  - { name: "Mod_Speed",    mechanism: "cc",   cc: 17,  curve: "exp",        type: "continuous" }
+  - { name: "Mod_Depth",    mechanism: "cc",   cc: 18,  curve: "linear",     type: "continuous" }
+  - { name: "IFX_Send",     mechanism: "cc",   cc: 91,  curve: "exp",        type: "continuous" }
+  - { name: "MFX_Send",     mechanism: "cc",   cc: 93,  curve: "exp",        type: "continuous" }
+  # Exemple de paramètre haute-résolution NRPN (existence à confirmer Korg).
+  - { name: "Pitch_Fine",   mechanism: "nrpn", nrpn_msb: 0, nrpn_lsb: 16,
+      curve: "linear", type: "continuous_bipolar", resolution: 14 }
+
+# === Tracks ===================================================================
+# Les 16 parts sont listées explicitement (pas de templating intégré au
+# format YAML — choix de design : YAML reste un format de données).
+# La seule différence inter-parts est `data_msb` (index part 0-15)
+# dans le preface NRPN de Part Select.
+
+tracks:
+  - id: "p1"
+    label: "P1"
+    kind: "part"
+    addressing:
+      midi_channel: 1
+      preface:
+        - { mechanism: "nrpn", msb: 0, lsb: 1, data_msb: 0 }
+    params: *part_params
+
+  - id: "p2"
+    label: "P2"
+    kind: "part"
+    addressing:
+      midi_channel: 1
+      preface:
+        - { mechanism: "nrpn", msb: 0, lsb: 1, data_msb: 1 }
+    params: *part_params
+
+  - id: "p3"
+    label: "P3"
+    kind: "part"
+    addressing:
+      midi_channel: 1
+      preface:
+        - { mechanism: "nrpn", msb: 0, lsb: 1, data_msb: 2 }
+    params: *part_params
+
+  - id: "p4"
+    label: "P4"
+    kind: "part"
+    addressing:
+      midi_channel: 1
+      preface:
+        - { mechanism: "nrpn", msb: 0, lsb: 1, data_msb: 3 }
+    params: *part_params
+
+  - id: "p5"
+    label: "P5"
+    kind: "part"
+    addressing:
+      midi_channel: 1
+      preface:
+        - { mechanism: "nrpn", msb: 0, lsb: 1, data_msb: 4 }
+    params: *part_params
+
+  - id: "p6"
+    label: "P6"
+    kind: "part"
+    addressing:
+      midi_channel: 1
+      preface:
+        - { mechanism: "nrpn", msb: 0, lsb: 1, data_msb: 5 }
+    params: *part_params
+
+  - id: "p7"
+    label: "P7"
+    kind: "part"
+    addressing:
+      midi_channel: 1
+      preface:
+        - { mechanism: "nrpn", msb: 0, lsb: 1, data_msb: 6 }
+    params: *part_params
+
+  - id: "p8"
+    label: "P8"
+    kind: "part"
+    addressing:
+      midi_channel: 1
+      preface:
+        - { mechanism: "nrpn", msb: 0, lsb: 1, data_msb: 7 }
+    params: *part_params
+
+  - id: "p9"
+    label: "P9"
+    kind: "part"
+    addressing:
+      midi_channel: 1
+      preface:
+        - { mechanism: "nrpn", msb: 0, lsb: 1, data_msb: 8 }
+    params: *part_params
+
+  - id: "p10"
+    label: "P10"
+    kind: "part"
+    addressing:
+      midi_channel: 1
+      preface:
+        - { mechanism: "nrpn", msb: 0, lsb: 1, data_msb: 9 }
+    params: *part_params
+
+  - id: "p11"
+    label: "P11"
+    kind: "part"
+    addressing:
+      midi_channel: 1
+      preface:
+        - { mechanism: "nrpn", msb: 0, lsb: 1, data_msb: 10 }
+    params: *part_params
+
+  - id: "p12"
+    label: "P12"
+    kind: "part"
+    addressing:
+      midi_channel: 1
+      preface:
+        - { mechanism: "nrpn", msb: 0, lsb: 1, data_msb: 11 }
+    params: *part_params
+
+  - id: "p13"
+    label: "P13"
+    kind: "part"
+    addressing:
+      midi_channel: 1
+      preface:
+        - { mechanism: "nrpn", msb: 0, lsb: 1, data_msb: 12 }
+    params: *part_params
+
+  - id: "p14"
+    label: "P14"
+    kind: "part"
+    addressing:
+      midi_channel: 1
+      preface:
+        - { mechanism: "nrpn", msb: 0, lsb: 1, data_msb: 13 }
+    params: *part_params
+
+  - id: "p15"
+    label: "P15"
+    kind: "part"
+    addressing:
+      midi_channel: 1
+      preface:
+        - { mechanism: "nrpn", msb: 0, lsb: 1, data_msb: 14 }
+    params: *part_params
+
+  - id: "p16"
+    label: "P16"
+    kind: "part"
+    addressing:
+      midi_channel: 1
+      preface:
+        - { mechanism: "nrpn", msb: 0, lsb: 1, data_msb: 15 }
+    params: *part_params
+
+# === Global params ============================================================
+# Deux groupes distincts : IFX (Insert FX, partagé entre parts qui ont
+# un Send>0) et Master FX (en bout de chaîne).
+# Les deux groupes utilisent le même preface NRPN (data_msb=16, "Common"
+# zone Korg). Stay redundant — pas de factorisation pour 2 lignes
+# de gain (cf. arbitrage chef d'orchestre).
+
+global_param_groups:
+  - id: "ifx"
+    label: "Insert FX"
+    addressing:
+      midi_channel: 1
+      preface:
+        - { mechanism: "nrpn", msb: 0, lsb: 1, data_msb: 16 }
+    params:
+      - { name: "Type",   mechanism: "cc", cc: 80, curve: "none", type: "enum",
+          values: ["Off", "Reverb", "Delay", "Chorus", "Flanger", "Phaser",
+                   "Distortion", "Decimator", "FilterLFO", "WahAuto", "Compressor",
+                   "Tube", "Grain", "PitchShifter", "Looper", "Tape", "Vocoder"] }
+      - { name: "Param1", mechanism: "cc", cc: 81, curve: "linear", type: "continuous" }
+      - { name: "Param2", mechanism: "cc", cc: 82, curve: "linear", type: "continuous" }
+      - { name: "Param3", mechanism: "cc", cc: 83, curve: "linear", type: "continuous" }
+      - { name: "Mix",    mechanism: "cc", cc: 84, curve: "exp",    type: "continuous" }
+
+  - id: "mfx"
+    label: "Master FX"
+    addressing:
+      midi_channel: 1
+      preface:
+        - { mechanism: "nrpn", msb: 0, lsb: 1, data_msb: 16 }
+    params:
+      - { name: "Type",   mechanism: "cc", cc: 85, curve: "none", type: "enum",
+          values: ["Off", "Compressor", "Limiter", "EQ", "Saturator", "Maximizer"] }
+      - { name: "Param1", mechanism: "cc", cc: 86, curve: "linear", type: "continuous" }
+      - { name: "Param2", mechanism: "cc", cc: 87, curve: "linear", type: "continuous" }
+      - { name: "Param3", mechanism: "cc", cc: 88, curve: "linear", type: "continuous" }
+      - { name: "Mix",    mechanism: "cc", cc: 89, curve: "exp",    type: "continuous" }
+
+quirks:
+  requires_part_select_preface: true

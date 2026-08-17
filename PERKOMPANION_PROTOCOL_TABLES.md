@@ -1,17 +1,108 @@
+# PërKompanion — Protocol Tables — v1.0.0
+
+## Changelog v0.9 → v1.0.0
+
+### Section "Note v0.9" remplacée par "Note v1.0.0"
+- Avant : note ergonomique sur module violet 9×5, OLED master SPI, etc.
+- Après : note sur le pivot framework + Device Profiles. Les modifications v0.9
+  restent valides ; seules les tables param_id et le bloc commandes évoluent.
+- Rationale : la v1.0.0 marque le passage de "PërKompanion = Perkons-only" à
+  "framework générique avec Perkons comme profile de référence". Le pivot est
+  conceptuel et impacte directement l'allocation des param_id.
+
+### §2 — Bloc 0x0000-0x0FFF restructuré
+- Avant : bloc Perkons hardcodé (0x0000-0x0FFF avec sous-bloc 0x0500-0x08FF
+  pour V5-V8 internes).
+- Après : bloc partitionné en **4 slots × 1024 paramètres** réservés aux
+  profiles externes chargés dynamiquement (perkons_hd01.yaml, etc.). Le
+  Perkons devient un profile parmi d'autres, chargé en slot 0 par défaut.
+- Rationale : le firmware ne connaît plus le hardware audio par hardcoding ;
+  il connaît une grammaire de profile et alloue les param_id par slot.
+  Cohérent avec le principe §13 ("le firmware ne connaît pas le hardware
+  audio, seulement les param_id"). Capacité par profile : 1024 params, marge
+  confortable pour Digitakt II (~414 params) et tout device prévisible.
+
+### §2 — Sous-bloc V5-V8 relocalisé
+- Avant : V5-V8 occupent 0x0500-0x08FF (collision avec le partitionnement
+  framework du bloc 0x0000-0x0FFF).
+- Après : V5-V8 relocalisés vers **0x6000-0x6FFF** (qui était réservé pour
+  modulations complexes v4+).
+- Rationale : les voix virtuelles internes V5-V8 sont du code embarqué
+  PërKompanion, pas un device externe. Elles méritent leur bloc dédié,
+  séparé des profiles externes.
+
+### §2 — Blocs réservés réajustés
+- 0x6000-0x6FFF : ancienne réserve "modulations complexes v4+" → désormais
+  V5-V8 internes.
+- 0x7000-0x7FFF : ancienne réserve "matrix modulation v5+" → désormais
+  réserve double : modulations complexes ET extension profiles si plus de
+  4 profiles simultanés en v5+.
+- 0x8000-0xFFFF : inchangé (réservé utilisateur / plugins custom).
+- Rationale : le futur a moins besoin de "matrix modulation" dédiée que de
+  marge profile/modulation combinée. Concentration des réserves.
+
+### §6 — Bloc 0xC0-0xCF Device Profile ajouté (Pi → Teensy)
+- Contenu : nouvelles commandes pour transférer un profile binaire sérialisé
+  Pi → Teensy avec chunking, validation CRC, gestion multi-slots. Une note
+  documentaire clarifie le partage de plage 0xC0-0xCF entre les deux
+  directions du protocole (Pi → Teensy intégralement Device Profiles ;
+  Teensy → Pi partagé entre hotcues 0xC0-0xC4 et ACK profile 0xCA-0xCC).
+- Rationale : le Pi parse le YAML, le Teensy reçoit du binaire compact qu'il
+  stocke en RAM (mode normal) et en EEPROM (mode dégradé). Cette commande
+  était l'inconnue mentionnée à l'arbitrage chef d'orchestre §4 des
+  décisions transverses. Bloc choisi parmi les libres Pi → Teensy, adjacent
+  thématiquement aux blocs 0x80 (DSP) et 0x90 (Voice Kits).
+
+### §14 — Section "Device Profile Schema" ajoutée
+- Contenu : pointeur vers `device_profile_schema.md` et
+  `profile_template_with_docs.yaml`. Décrit brièvement le rôle du profile
+  YAML et la chaîne YAML → binaire → Teensy.
+- Rationale : sans cette section, le lecteur de PROTOCOL_TABLES découvre
+  le bloc 0xC0-0xCF sans comprendre d'où viennent les profiles. Pointeur
+  documentaire vers la spec dédiée.
+
+### Sections inchangées
+- §1 (CC MIDI Perkons), §3 (numérotation physique), §4 (encoding wire),
+  §5 (endianness), §7 (codes WARNING/ERROR), §8 (snapshot), §9 (priorisation),
+  §10 (position-in-bar), §11 (combinaison modulations), §12 (mode dégradé pad),
+  §13 (versionnage protocole) : aucune modification.
+- Tous les autres blocs commandes (0x10-0xBF, 0xD0-0xFF) Pi→Teensy et
+  Teensy→Pi : inchangés.
+
+---
+
 # PërKompanion — Protocol Tables
 
 > Tables de référence exhaustives pour l'implémentation
-> Document technique annexe — **v0.9** — avril 2026
+> Document technique annexe — **v1.0.0** — avril 2026
 
 ---
 
-## Note v0.9
+## Note v1.0.0
 
-**Aucune modification des tables** par rapport à la v0.8 final. Les évolutions v0.9 sont purement ergonomiques et mécaniques (module violet 9×5, uniformisation Cherry MX, OLED master en SPI). Les IDs de paramètres, CCs MIDI, commandes USB série, encoding des valeurs, et allocations d'adresses restent identiques.
+**Pivot framework** : PërKompanion devient un framework générique de companion
+MIDI. Le Perkons HD-01 est désormais le **premier profile de référence**, plus
+le projet lui-même. Cette évolution conceptuelle se traduit dans les tables
+par deux modifications majeures :
 
-**Impact mineur sur la numérotation physique** (section dédiée dans ce document) : les boutons V1-V8 et M1-M5 sont désormais dans le module violet au lieu de zones séparées. L'ID logique de chaque bouton (v_button_1 à v_button_8, m_button_1 à m_button_5) reste inchangé, seule leur position physique sur la plate évolue.
+1. Le bloc `0x0000-0x0FFF` (anciennement Perkons hardcodé) est restructuré en
+   **4 slots × 1024 paramètres** réservés aux profiles externes chargés
+   dynamiquement.
+2. Les voix virtuelles internes V5-V8 sont **relocalisées** depuis
+   `0x0500-0x08FF` vers `0x6000-0x6FFF`.
 
----
+Un nouveau bloc commandes `0xC0-0xCF` (Pi → Teensy) est ajouté pour la
+gestion des Device Profiles (chargement, déchargement, listing).
+
+Une nouvelle section §14 "Device Profile Schema" pointe vers les documents
+dédiés (`device_profile_schema.md`, `profile_template_with_docs.yaml`,
+quatre profiles de référence dans `profiles/`).
+
+**Pas de changement** sur l'encoding des valeurs sur le fil, les numéros de
+CC MIDI Perkons (qui restent dans le profile `perkons_hd01.yaml`), la
+numérotation physique du matériel, les commandes hors bloc 0xC0-0xCF, le
+format snapshot, ou le versionnage du protocole.
+
 
 ## Préambule
 
@@ -89,39 +180,45 @@ En Multi MIDI Channel, n'importe quelle note sur le canal d'une voix déclenche 
 
 `param_id` est un entier 16-bit (2 bytes, little endian) utilisé dans les commandes `SET_PARAM`, `SET_MOD`, etc.
 
-### Bloc 0x0000-0x0FFF — Paramètres Perkons (via MIDI CC)
+### Bloc 0x0000-0x0FFF — Profiles externes (4 slots × 1024 paramètres)
 
-Encodage : `0x0V00 + index` où V = voix (1-4) et index = rang du paramètre (0-10).
+Le bloc `0x0000-0x0FFF` est entièrement réservé aux **profiles de devices
+externes** chargés dynamiquement (cf. `device_profile_schema.md`). Il est
+partitionné en 4 slots de 1024 paramètres chacun :
 
-**Voix 1** (0x0100 - 0x010A) :
-| param_id | Paramètre | CC MIDI | Canal | Courbe | Type |
-|----------|-----------|---------|-------|--------|------|
-| 0x0100 | V1.Tune | 70 | 1 | linear | continuous |
-| 0x0101 | V1.Param1 | 71 | 1 | linear | continuous |
-| 0x0102 | V1.Cutoff | 72 | 1 | log_strong | continuous |
-| 0x0103 | V1.FX_Send | 73 | 1 | exp | continuous |
-| 0x0104 | V1.Decay | 74 | 1 | exp | continuous |
-| 0x0105 | V1.Param2 | 75 | 1 | linear | continuous |
-| 0x0106 | V1.Drive | 76 | 1 | scurve | continuous |
-| 0x0107 | V1.Level | 77 | 1 | exp | continuous |
-| 0x0108 | V1.Algo | 78 | 1 | none | **enum** 0-2 |
-| 0x0109 | V1.Mode | 79 | 1 | none | **enum** 0-2 |
-| 0x010A | V1.Filter | 80 | 1 | none | **enum** 0-2 (LP/BP/HP) |
+| Slot | Plage param_id | Capacité |
+|------|---------------|----------|
+| 0 | `0x0000 - 0x03FF` | 1024 params |
+| 1 | `0x0400 - 0x07FF` | 1024 params |
+| 2 | `0x0800 - 0x0BFF` | 1024 params |
+| 3 | `0x0C00 - 0x0FFF` | 1024 params |
 
-**Voix 2** (0x0200 - 0x020A) : CC 81-91, canal 2
-**Voix 3** (0x0300 - 0x030A) : CC 92-102, canal 3
-**Voix 4** (0x0400 - 0x040A) : CC 103-113, canal 4
+**Allocation à l'intérieur d'un slot** : le runtime alloue les `param_id`
+séquentiellement selon l'ordre de déclaration des params dans le profile
+(parcours `tracks` puis `global_param_groups`, dans l'ordre du fichier YAML).
 
-Formule générale :
-```
-param_id = 0x0V00 + index
-CC_MIDI  = 70 + (V-1) * 11 + index
-Canal    = V
-```
+**Hint utilisateur** : un profile YAML peut déclarer un champ
+`preferred_slot: N` (0-3) pour suggérer un slot d'accueil au runtime. Le
+runtime résout les conflits si deux profiles préfèrent le même slot.
 
-où V ∈ {1, 2, 3, 4} et index ∈ {0, 1, ..., 10} pour {Tune, Param1, Cutoff, FX_Send, Decay, Param2, Drive, Level, Algo, Mode, Filter}.
+**Capacité observée** sur les 4 profiles de référence :
 
-**Total Perkons** : 11 params × 4 voix = **44 paramètres** modulables via MIDI CC.
+| Profile | Params | Saturation slot |
+|---------|--------|-----------------|
+| perkons_hd01 | 44 | < 5% |
+| elektron_digitakt_ii | ~414 | ~40% |
+| korg_electribe_2_sampler | ~234 | ~23% |
+| behringer_td3_mo | 13 | < 2% |
+
+Aucun profile observé ne sature un slot.
+
+**Profile de référence Perkons** : le mapping concret CC MIDI ↔ param_id
+pour le Perkons HD-01 vit désormais dans `profiles/perkons_hd01.yaml`. Les
+44 paramètres Perkons (4 voix × 11 params) sont chargés en slot 0 par défaut
+au boot du système.
+
+Les CCs MIDI du Perkons (70-113) restent documentés dans la §1 ci-dessus,
+qui sert maintenant de référence-source pour la validation du profile YAML.
 
 ### Bloc 0x1000-0x1FFF — Paramètres Master (DSP, v2+)
 
@@ -289,70 +386,78 @@ param_id = 0x4000 + (V * 0x100) + (sub_param_index * 0x20) + slot
 | 0x5040 | Headphone.Volume | continuous 0.0-1.0 |
 | 0x5041 | Headphone.MuteMaster | boolean |
 
-### Bloc 0x0500-0x08FF — Paramètres voix virtuelles V5-V8 (v3+)
+### Bloc 0x6000-0x6FFF — Voix virtuelles internes V5-V8 (v3+)
 
-Les 4 voix virtuelles V5-V8 pilotent des hotcues assignés. Elles ont une structure de param_id similaire à V1-V4 mais adaptée aux paramètres de hotcue + DSP PërKompanion.
+> **Relocalisation v1.0.0** : ce bloc occupait précédemment `0x0500-0x08FF`,
+> en collision avec le partitionnement framework du bloc `0x0000-0x0FFF`.
+> Les voix virtuelles internes (hotcues PërKompanion) sont du code embarqué,
+> pas un device externe — elles méritent leur bloc dédié, séparé des profiles.
 
-**Structure** : `0x0VNN` où V = numéro de voix (5-8) et NN = sous-paramètre.
+Les 4 voix virtuelles V5-V8 pilotent des hotcues assignés. Elles ont une
+structure de param_id similaire à V1-V4 mais adaptée aux paramètres de
+hotcue + DSP PërKompanion.
 
-**V5 — Paramètres de base (0x0500-0x050F)**
+**Structure** : `0x6VNN` où V = numéro de voix (5-8) et NN = sous-paramètre.
 
-| param_id | Paramètre | Range | Type |
-|----------|-----------|-------|------|
-| 0x0500 | V5.AssignedHotcueId | 0-127 | integer (hotcue assigné) |
-| 0x0501 | V5.Volume | 0.0-1.0 | continuous |
-| 0x0502 | V5.Pitch | -24 à +24 (semitones) | integer bipolar |
-| 0x0503 | V5.Pan | -1.0 à +1.0 | continuous bipolar |
-| 0x0504 | V5.Start | 0.0-1.0 | continuous |
-| 0x0505 | V5.Length | 0.0-1.0 | continuous |
-| 0x0506 | V5.Feedback | 0.0-1.0 | continuous |
-| 0x0507 | V5.Reverse | -1.0 à +1.0 | continuous bipolar (vitesse) |
-| 0x0508 | V5.LoopMode | 0-2 | **enum** (Loop/OneShot/NRepeat) |
-| 0x0509 | V5.Quantize | 0-5 | **enum** (Off/1/16/1/4/1/2/1bar/Free) |
-| 0x050A | V5.FadeIn | 0.0-1.0 | continuous |
-| 0x050B | V5.FadeOut | 0.0-1.0 | continuous |
-
-**V5 — Paramètres DSP (0x0510-0x051F)**
+**V5 — Paramètres de base (0x6500-0x650F)**
 
 | param_id | Paramètre | Range | Type |
 |----------|-----------|-------|------|
-| 0x0510 | V5.Filter.Cutoff | 0.0-1.0 | continuous |
-| 0x0511 | V5.Filter.Resonance | 0.0-1.0 | continuous |
-| 0x0512 | V5.Filter.Type | 0-3 | **enum** (LP/HP/BP/Notch) |
-| 0x0513 | V5.Filter.Slope | 0-2 | **enum** (12/24/48 dB) |
-| 0x0514 | V5.Drive | 0.0-1.0 | continuous |
-| 0x0515 | V5.Drive.Type | 0-2 | **enum** (Tube/Tape/Digital) |
-| 0x0516 | V5.FX.ReverbSend | 0.0-1.0 | continuous |
-| 0x0517 | V5.FX.DelaySend | 0.0-1.0 | continuous |
-| 0x0518 | V5.FX.WetDry | 0.0-1.0 | continuous |
+| 0x6500 | V5.AssignedHotcueId | 0-127 | integer (hotcue assigné) |
+| 0x6501 | V5.Volume | 0.0-1.0 | continuous |
+| 0x6502 | V5.Pitch | -24 à +24 (semitones) | integer bipolar |
+| 0x6503 | V5.Pan | -1.0 à +1.0 | continuous bipolar |
+| 0x6504 | V5.Start | 0.0-1.0 | continuous |
+| 0x6505 | V5.Length | 0.0-1.0 | continuous |
+| 0x6506 | V5.Feedback | 0.0-1.0 | continuous |
+| 0x6507 | V5.Reverse | -1.0 à +1.0 | continuous bipolar (vitesse) |
+| 0x6508 | V5.LoopMode | 0-2 | **enum** (Loop/OneShot/NRepeat) |
+| 0x6509 | V5.Quantize | 0-5 | **enum** (Off/1/16/1/4/1/2/1bar/Free) |
+| 0x650A | V5.FadeIn | 0.0-1.0 | continuous |
+| 0x650B | V5.FadeOut | 0.0-1.0 | continuous |
 
-**V5 — Paramètres Arp (0x0520-0x052F)**
-
-| param_id | Paramètre | Range | Type |
-|----------|-----------|-------|------|
-| 0x0520 | V5.Arp.Enabled | 0-1 | boolean |
-| 0x0521 | V5.Arp.Mode | 0-9 | **enum** |
-| 0x0522 | V5.Arp.Rate | 0-8 | **enum** |
-| 0x0523 | V5.Arp.OctaveRange | 0-4 | integer |
-| 0x0524 | V5.Arp.GateTime | 10-100 | continuous (%) |
-| 0x0525 | V5.Arp.Swing | -50 à +50 | continuous bipolar (%) |
-
-**V5 — Paramètres LFO (0x0530-0x053F)**
+**V5 — Paramètres DSP (0x6510-0x651F)**
 
 | param_id | Paramètre | Range | Type |
 |----------|-----------|-------|------|
-| 0x0530 | V5.LFO.Rate | 0.0-1.0 | continuous |
-| 0x0531 | V5.LFO.Depth | 0.0-1.0 | continuous |
-| 0x0532 | V5.LFO.Destination | param_id cible | integer |
-| 0x0533 | V5.LFO.Shape | 0-4 | **enum** (Sine/Tri/Saw/Square/Random) |
-| 0x0534 | V5.LFO.Phase | 0.0-1.0 | continuous |
-| 0x0535 | V5.LFO.Smoothing | 0.0-1.0 | continuous |
-| 0x0536 | V5.LFO.SyncMode | 0-1 | **enum** (Free/Sync) |
-| 0x0537 | V5.LFO.Polarity | 0-1 | **enum** (Unipolar/Bipolar) |
+| 0x6510 | V5.Filter.Cutoff | 0.0-1.0 | continuous |
+| 0x6511 | V5.Filter.Resonance | 0.0-1.0 | continuous |
+| 0x6512 | V5.Filter.Type | 0-3 | **enum** (LP/HP/BP/Notch) |
+| 0x6513 | V5.Filter.Slope | 0-2 | **enum** (12/24/48 dB) |
+| 0x6514 | V5.Drive | 0.0-1.0 | continuous |
+| 0x6515 | V5.Drive.Type | 0-2 | **enum** (Tube/Tape/Digital) |
+| 0x6516 | V5.FX.ReverbSend | 0.0-1.0 | continuous |
+| 0x6517 | V5.FX.DelaySend | 0.0-1.0 | continuous |
+| 0x6518 | V5.FX.WetDry | 0.0-1.0 | continuous |
 
-**V6, V7, V8** : structure identique mais préfixe 0x06XX, 0x07XX, 0x08XX.
+**V5 — Paramètres Arp (0x6520-0x652F)**
 
-**Total params V5-V8** : ~30 paramètres × 4 voix = **120 paramètres modulables pour voix virtuelles**.
+| param_id | Paramètre | Range | Type |
+|----------|-----------|-------|------|
+| 0x6520 | V5.Arp.Enabled | 0-1 | boolean |
+| 0x6521 | V5.Arp.Mode | 0-9 | **enum** |
+| 0x6522 | V5.Arp.Rate | 0-8 | **enum** |
+| 0x6523 | V5.Arp.OctaveRange | 0-4 | integer |
+| 0x6524 | V5.Arp.GateTime | 10-100 | continuous (%) |
+| 0x6525 | V5.Arp.Swing | -50 à +50 | continuous bipolar (%) |
+
+**V5 — Paramètres LFO (0x6530-0x653F)**
+
+| param_id | Paramètre | Range | Type |
+|----------|-----------|-------|------|
+| 0x6530 | V5.LFO.Rate | 0.0-1.0 | continuous |
+| 0x6531 | V5.LFO.Depth | 0.0-1.0 | continuous |
+| 0x6532 | V5.LFO.Destination | param_id cible | integer |
+| 0x6533 | V5.LFO.Shape | 0-4 | **enum** (Sine/Tri/Saw/Square/Random) |
+| 0x6534 | V5.LFO.Phase | 0.0-1.0 | continuous |
+| 0x6535 | V5.LFO.Smoothing | 0.0-1.0 | continuous |
+| 0x6536 | V5.LFO.SyncMode | 0-1 | **enum** (Free/Sync) |
+| 0x6537 | V5.LFO.Polarity | 0-1 | **enum** (Unipolar/Bipolar) |
+
+**V6, V7, V8** : structure identique mais préfixe 0x66XX, 0x67XX, 0x68XX.
+
+**Total params V5-V8** : ~30 paramètres × 4 voix = **120 paramètres modulables
+pour voix virtuelles**.
 
 ### Bloc 0x9000-0x9FFF — Motions (v2+)
 
@@ -369,9 +474,15 @@ Les motions sont les mouvements d'encodeurs capturés en live via REC. Elles peu
 
 ### Blocs réservés
 
-- 0x6000-0x6FFF : réservé pour modulations complexes et séquenceurs hotcue (v4+)
-- 0x7000-0x7FFF : réservé pour matrix modulation (v5+)
-- 0x8000-0xFFFF : réservé utilisateur / plugins custom
+- 0x7000-0x7FFF : réserve double — modulations complexes / séquenceurs hotcue
+  (v4+) **et** extension profiles si plus de 4 profiles externes simultanés
+  (v5+).
+- 0x8000-0xFFFF : réservé utilisateur / plugins custom.
+
+> Note v1.0.0 : le bloc `0x6000-0x6FFF` est désormais occupé par les voix
+> virtuelles internes V5-V8 (cf. ci-dessus). L'ancienne réserve "matrix
+> modulation v5+" est consolidée dans `0x7000-0x7FFF` pour libérer du
+> design space.
 
 ---
 
@@ -868,6 +979,52 @@ Les motions sont les mouvements d'encodeurs capturés en live via REC. Ce bloc g
 | 0x95 | LOAD_PERKONS_SNAPSHOT | snapshot_id (2) + quantize (1) |
 | 0x96 | DELETE_PERKONS_SNAPSHOT | snapshot_id (2) |
 
+**Bloc 0xC0-0xCF : Device Profiles (v1.0.0+)**
+
+Charge, décharge et liste les Device Profiles. Le profile YAML est parsé
+et sérialisé en binaire compact côté Pi avant transfert au Teensy.
+
+| CMD | Nom | Payload |
+|-----|-----|---------|
+| 0xC0 | LOAD_DEVICE_PROFILE_BEGIN | profile_slot (1) + total_size_bytes (4) + crc32 (4) + name_length (1) + name (N ASCII ≤ 32) |
+| 0xC1 | LOAD_DEVICE_PROFILE_CHUNK | profile_slot (1) + chunk_index (2) + chunk_size (1) + data (N bytes) |
+| 0xC2 | LOAD_DEVICE_PROFILE_END | profile_slot (1) + checksum (4) |
+| 0xC3 | UNLOAD_DEVICE_PROFILE | profile_slot (1) |
+| 0xC4 | LIST_LOADED_PROFILES | — (retour via DEVICE_PROFILE_LIST_ENTRY) |
+| 0xC5 | SET_ACTIVE_PROFILE_FOR_DEGRADED_MODE | profile_slot (1) |
+
+**LOAD_DEVICE_PROFILE_BEGIN** :
+- `profile_slot` (0-3) : slot cible.
+- `total_size_bytes` : taille totale du blob binaire à transférer.
+- `crc32` : checksum du blob complet, pour validation à la fin.
+- `name` : nom du profile (e.g. "perkons_hd01"), max 32 ASCII.
+
+**LOAD_DEVICE_PROFILE_CHUNK** :
+- Chunks de 240 bytes max (cohérent avec LEN max protocole).
+- Indexés en ordre croissant à partir de 0.
+- Le Teensy n'ACK pas chaque chunk (gain bande passante).
+
+**LOAD_DEVICE_PROFILE_END** :
+- `checksum` recalculé par le Teensy et comparé au `crc32` initial.
+- ACK via PROFILE_LOAD_ACK (0xCB Teensy → Pi, voir ci-dessous).
+
+**UNLOAD_DEVICE_PROFILE** : libère le slot. Si le slot était l'actif du
+mode dégradé, le runtime applique la politique de fallback (cf. notes
+privées "Mode dégradé en multi-machine").
+
+**SET_ACTIVE_PROFILE_FOR_DEGRADED_MODE** : indique au Teensy quel slot
+sérialiser en EEPROM pour le mode dégradé. Mise à jour automatique à
+chaque changement de page côté Pi (cf. anticipations v2-v4 "Mode
+dégradé en multi-machine").
+
+**Note sur le partage de plage 0xC0-0xCF** : le bloc 0xC0-0xCF Pi → Teensy
+est intégralement dédié aux Device Profiles (CMD 0xC0-0xC5). Le bloc
+0xC0-0xCF Teensy → Pi est en revanche partagé : 0xC0-0xC4 sont les états
+hotcues existants (cf. ci-dessous), 0xCA-0xCC sont les ACK profile ajoutés
+en v1.0.0. Les deux directions du protocole étant indépendantes (DIR=0x01
+vs DIR=0x02 dans la trame), ce partage de plage hexa n'introduit aucun
+conflit fonctionnel.
+
 **Bloc 0xF0-0xFF : Maintenance et debug**
 
 | CMD | Nom | Payload |
@@ -930,6 +1087,21 @@ status values :
 - 0x01 : checksum_fail
 - 0x02 : memory_full
 - 0x03 : ready (pour LOAD_HOTCUE_START)
+
+**Bloc 0xCA-0xCF : Device Profiles (Teensy → Pi, v1.0.0+)**
+
+| CMD | Nom | Payload |
+|-----|-----|---------|
+| 0xCA | DEVICE_PROFILE_LIST_ENTRY | profile_slot (1) + name_length (1) + name (N ASCII) + active_for_degraded (1) |
+| 0xCB | PROFILE_LOAD_ACK | profile_slot (1) + status (1) + crc_received (4) |
+| 0xCC | PROFILE_UNLOAD_ACK | profile_slot (1) + status (1) |
+
+**status** values pour PROFILE_LOAD_ACK / PROFILE_UNLOAD_ACK :
+- 0x00 : OK
+- 0x01 : checksum_fail
+- 0x02 : slot_already_occupied (LOAD vers un slot non vide)
+- 0x03 : slot_empty (UNLOAD d'un slot vide)
+- 0x04 : eeprom_write_fail (échec persistance mode dégradé)
 
 **Bloc 0xD0-0xDF : Monitoring**
 
@@ -1232,4 +1404,57 @@ Via `HELLO` (0x01) et `HELLO_ACK` (0x81). Si majors différents → ERROR PROTOC
 
 ---
 
-*Fin de PERKOMPANION_PROTOCOL_TABLES.md — v0.7, avril 2026*
+## 14. Device Profile Schema
+
+> Section ajoutée en v1.0.0 dans le sillage du pivot framework.
+
+PërKompanion charge dynamiquement des **Device Profiles** YAML qui décrivent
+la grammaire MIDI des drum machines, synthés ou samplers hardware pilotés.
+Chaque profile occupe un des 4 slots du bloc `0x0000-0x0FFF` (cf. §2).
+
+### Documents associés
+
+- **`device_profile_schema.md`** : spécification narrative complète du format
+  YAML (sections obligatoires, optionnelles, grammaire des params, mécanismes
+  supportés, conventions YAML).
+- **`profile_template_with_docs.yaml`** : template auto-documenté pour
+  contributeurs qui rédigent un nouveau profile.
+- **`profiles/perkons_hd01.yaml`** : profile de référence Perkons HD-01.
+- **`profiles/elektron_digitakt_ii.yaml`** : profile Digitakt II (paradigme
+  Multi Channel, tracks hétérogènes).
+- **`profiles/korg_electribe_2_sampler.yaml`** : profile Electribe 2 Sampler
+  (paradigme Single Channel + Part Select, NRPN).
+- **`profiles/behringer_td3_mo.yaml`** : profile TD-3-MO (minimaliste).
+
+### Chaîne YAML → Binaire → Teensy
+
+1. Le Pi parse le YAML (`js-yaml`), valide contre le schéma.
+2. Le Pi sérialise le profile en binaire compact (table de params + offsets
+   CC + courbes + preface MIDI). Format binaire : à spécifier en pré-v1
+   du firmware Teensy.
+3. Le Pi transfère le blob via `LOAD_DEVICE_PROFILE_BEGIN/CHUNK/END`
+   (bloc 0xC0-0xCF, cf. §6).
+4. Le Teensy stocke le blob en RAM (mode normal) et l'écrit en EEPROM si
+   désigné comme actif pour le mode dégradé.
+5. Le Teensy alloue les `param_id` du slot ciblé selon l'ordre de
+   déclaration et expose ces paramètres au moteur de modulation.
+
+### Capacité
+
+- 4 profiles externes simultanés en v1 (slots 0-3 du bloc 0x0000-0x0FFF).
+- 1024 paramètres par slot — capacité largement supérieure aux profiles
+  observés (~414 params pour Digitakt II, le plus dense des 4 testés).
+- Extension v5+ envisagée vers le bloc `0x7000-0x7FFF` si plus de 4 profiles
+  simultanés sont nécessaires.
+
+### Mode dégradé
+
+Le Teensy stocke en EEPROM (4 KB sur Teensy 4.1) un snapshot binaire du
+profile désigné actif via `SET_ACTIVE_PROFILE_FOR_DEGRADED_MODE` (CMD 0xC5).
+Si le Pi tombe, le Teensy continue à piloter le device avec ce profile.
+En cas d'EEPROM corrompu, fallback automatique vers Perkons hardcodé
+(cf. notes privées "Mode dégradé en multi-machine").
+
+---
+
+*Fin de PERKOMPANION_PROTOCOL_TABLES.md — v1.0.0, avril 2026*

@@ -12,6 +12,7 @@
 
 - [Roadmap 45 projets — vue d'ensemble](#roadmap)
 - [Direction visuelle — Cartoon Custom Paint](#direction)
+- [Convention layout pédales — décision méta-gamme](#convention-layout)
 - [Pédales d'effets — Décisions par projet](#pedales)
   - [Épisode 1 — Test physique du langage Cartoon Custom Paint](#pedales-ep1)
 - [À faire prochainement](#a-faire)
@@ -212,6 +213,148 @@ Les deux univers visuels sont **distincts mais cohérents** sous l'identité Sau
 
 ---
 
+<a id="convention-layout"></a>
+## Convention layout pédales — décision méta-gamme
+
+**Date** : 2026-04-28
+**Statut** : ✅ Validée pour toute la roadmap pédales (formats 1590B / 1590BB / 1590DD).
+
+**Décision** : adoption d'une **convention de layout physique commune à toutes les pédales Sauvignac**, formalisée dans le document `pedales_panel_layout.md` à la racine du repo.
+
+### TL;DR
+
+Six conventions invariantes posées au démarrage du projet #1 Mazout, avant que la moindre pédale soit construite, pour garantir la cohérence de gamme physique sur les 45 projets de la roadmap :
+
+1. **Connecteurs externes** sur la tranche arrière longue uniquement (jamais sur les flancs courts ni sur le top)
+2. **Pas de footswitch true bypass** — bypass continu via potar DRY/WET
+3. **Fixation PCB par standoffs nylon snap-in M3** + vis acier inox brut tête fraisée Allen affleurées
+4. **Disposition PCB intérieur** centrée, collée au flanc avant, avec convention "composants > 8mm couchés"
+5. **Format PCB EPLZON noir mat breadboard-style**, soudure traversante systématique
+6. **Identité visuelle** Cartoon Custom Paint extérieur + PCB noir mat intérieur + bend points laiton optionnels selon pertinence projet
+
+### Pivot stratégique
+
+Cette convention est l'aboutissement d'un arbitrage ergonomique-design réalisé en début de phase 1, avant le premier build :
+
+| Question explorée | Issue |
+|---|---|
+| Jacks top-mounted (au-dessus des knobs) | ❌ Câbles obstruent le tweak en jam, bruit mécanique sur prise, OLED masqués |
+| Jacks tranche arrière courte (flancs latéraux) | ❌ Empêche pédales jointives sur table |
+| **Jacks tranche arrière longue** | ✅ **Convention validée** — top 100% libre, pédales jointives possibles, câbles vers fond de table |
+| Footswitch 3PDT classique | ❌ Inadapté usage tabletop debout, demande de baisser pour bypass |
+| **Potar DRY/WET continu** | ✅ **Convention validée** — main reste sur le top, mix continu plus expressif |
+| Perçage couvercle pour fixation PCB | ✅ Validé après débat collage VHB vs perçage — perçage gagne en démontabilité |
+| Têtes vis dépassantes | ❌ Pédale instable sur table, raye les surfaces |
+| **Vis tête fraisée + perçage chanfreiné** | ✅ **Convention validée** — affleurement, esthétique pro, raccord visuel inox/alu |
+| Perfboard simple face vert FR-4 | ❌ Capacité routage limitée |
+| Stripboard pistes longues | 🟡 Bon pour publication tutoriel, mais limité pour build perso |
+| Tayda double face A-1194 | 🟡 Pas de plated through-holes, esthétique correcte mais pas signature |
+| **EPLZON noir mat breadboard-style** | ✅ **Convention validée** — coordonnées sérigraphiées, breadboard 1:1, cohérence interne |
+
+### Rationale
+
+- **Cohérence de gamme** : 45 pédales prévues sur 5+ ans → poser les conventions une fois évite des ajustements rétroactifs cauchemardesques
+- **Ergonomie tabletop assumée** : positionne explicitement la gamme Sauvignac comme **instruments de jam debout devant le setup**, pas pédales pedalboard guitariste — décision identitaire forte
+- **Précédent industriel reconnu** : Strymon, Eventide, Chase Bliss tabletop adoptent les mêmes conventions (jacks arrière + dry/wet sans footswitch + têtes fraisées affleurées)
+- **Faisabilité économique** : chaque convention est réalisable au prix unitaire d'une pédale T1 (~30-50€) sans investissement spécial
+- **Reproductibilité par viewers** : EPLZON breadboard-style avec coordonnées sérigraphiées = layout publiable trivialement, viewers reproduisent à l'identique
+
+### Document de référence
+
+L'intégralité des conventions, avec spécifications dimensionnelles, justifications et procédures, est documentée dans :
+
+> **`pedales_panel_layout.md`** — Convention layout pédales Sauvignac
+
+Ce document fait autorité pour toutes les décisions de conception physique sur les pédales de la roadmap. Il est référencé depuis chaque journal de décision projet (Mazout, Bazz Fuss, etc.) plutôt que dupliqué.
+
+### Outillage commun à acquérir
+
+Achat unique amorti sur toute la roadmap :
+
+- Foret HSS métal Ø3.5mm (perçage couvercle)
+- Foret à fraiser 90° HSS (chanfrein vis fraisées)
+- Pointeau automatique
+- Gabarit de perçage Sauvignac (à créer en MDF FabLab ou carton épais — 4 trous M3 standardisés sur 1590BB)
+
+### Conséquences pour le projet #1 Mazout
+
+Mazout est le **premier projet d'application** de cette convention. Toutes ses décisions individuelles (positions des knobs, jacks, toggle, bend points, layout PCB EPLZON, fixation à 2 standoffs centrés) découlent directement des 6 conventions ci-dessus.
+
+L'épisode 1 Sauvignac DIY (test physique du Cartoon Custom Paint sur boîtier vide) reste la première étape de mise en pratique. L'épisode 2 (premier build complet Mazout) sera la **première démonstration publique** de la convention en action.
+
+### Évolution — ajout des Conventions 7 et 8 (28 avril 2026, même session)
+
+Au cours de la même session de travail sur les conventions de gamme, deux décisions méta-gamme additionnelles ont été figées :
+
+**Convention 7 — Modules d'infrastructure et grille chromatique**
+
+La gamme Sauvignac est désormais structurée en **2 types d'objets** (pédales effets + modules d'infrastructure), avec **4 catégories chromatiques** distinctes lisibles au coup d'œil :
+
+| Catégorie | Boîtier | Posca |
+|---|---|---|
+| Pédales effets | 1590BB paysage couleur saturée flat (par projet) | Noir + accent blanc |
+| Modules audio (Routing) | 1590B portrait noir mat | Orange + blanc |
+| Modules contrôle (Modulation, Conversion, CV/MIDI) | 1590B portrait violet pastel/lavande | Noir + orange |
+| Modules alim (PSU, plomberie) | 1590B portrait alu brut | Noir + orange |
+
+L'**orange Sauvignac #FF4500** reste la couleur signature unique présente sur tous les modules infra en label Posca.
+
+Les modules d'infrastructure adoptent le **format 1590B portrait** (60×112mm) pour glisser entre les pédales 1590BB sans bouffer de largeur de table, tout en respectant l'alignement de la tranche arrière (Convention 1).
+
+Cette grille pose un système chromatique fonctionnel : **l'utilisateur lit la fonction d'un objet à son boîtier** sans avoir besoin de lire les labels.
+
+**Convention 8 — Finition sur boîtier Tayda prépeint**
+
+Découverte du sourcing : Tayda vend des boîtiers **prépeints en poudre époxy industrielle** dans une gamme de ~70 couleurs incluant l'orange Sauvignac (validé visuellement comme matchant #FF4500), un noir mat satisfaisant, du violet pastel, et l'alu brut standard.
+
+Décision : **basculement de la peinture maison à la bombe vers les boîtiers Tayda prépeints** pour toutes les catégories où une couleur Tayda matche, ce qui couvre l'intégralité de la grille chromatique de Convention 7.
+
+**Gain estimé** : ~3-4h de production par pédale (peinture + sous-couche + couches + séchage 24h initial éliminés). À l'échelle de la roadmap 30+ pédales, gain de ~100h de production.
+
+**Workflow de finition Sauvignac sur boîtier Tayda prépeint** documenté dans Convention 8 : dégraissage alcool isopropylique → ponçage léger optionnel → application Posca → cuisson Posca 60-70°C → vernis acrylique satin à base d'eau → cuisson finale optionnelle.
+
+Cette décision **ne modifie pas** la convention 6 (Cartoon Custom Paint) : le langage hand-painted Posca + vernis reste intact, ce qui change c'est uniquement la **base peinte** qui passe de "bombe maison" à "Tayda prépeint". L'effet visuel final reste 100% Sauvignac.
+
+### Test physique combiné
+
+L'épisode 1 YouTube prévu (test physique du Cartoon Custom Paint sur boîtier vide) devient également le **test du workflow Convention 8** : dégraissage + Posca + vernis sur boîtier Tayda prépeint. Si le test valide la durabilité, l'ensemble de la phase 1 Sauvignac peut être commandée en boîtiers prépeints.
+
+### Évolution — ajout de la Convention 9 (29 avril 2026, durant montage Mazout)
+
+**Convention 9 — Connectique alimentation DC**
+
+Décision figée durant le montage du projet #1 Mazout, suite à un échange diagnostique sur le bon choix de jack DC chassis-mount (le Cliff FC68148 initialement en stock s'est révélé être un PCB-mount horizontal, incompatible avec la convention EPLZON + fils volants de Mazout).
+
+**Référence retenue** : **Tayda DC-025M** (~0.24 USD), chassis-mount 5.5/2.1, filetage M8 métal nickelé, écrou hexagonal métal, corps interne typiquement isolé.
+
+**Polarité** : **centre négatif** (tip = GND, sleeve = +9V) — convention Boss historique, standard industrie pédale, compatible avec toutes les alims pedalboard du marché (One Spot, Cioks, Strymon Zuma, etc.).
+
+**Protection inversion polarité** : **diode Schottky 1N5817 en montage shunt** (cathode/+9V, anode/GND), montage Boss historique le plus répandu en DIY pédale.
+
+**Perçage** : trou Ø 8.2 mm dans la tranche arrière, à reporter dans le gabarit de perçage Sauvignac (en plus des Ø 9.5 mm jacks audio et Ø 3.5 mm vis M3 Convention 3).
+
+**Pivot d'arbitrage**
+
+| Question explorée | Issue |
+|---|---|
+| Cliff FC68148 PCB-mount horizontal (stock existant 20 pièces) | ❌ Incompatible avec convention EPLZON + fils volants. Conservé en stock pour phase KiCad future (T3, multieffet #45). |
+| Switchcraft 712A (premier réflexe — standard industrie pédale) | 🟡 Standard reconnu, mais impose une commande séparée Mouser/Reverb qui casse la cohérence one-stop-shop Tayda. ~3 USD pièce. |
+| Lumberg NEB/J 21 chez TME | 🟡 Qualité solide, mais second fournisseur pour une seule pièce. |
+| **Tayda DC-025M** | ✅ **Convention validée** — panier Tayda unifié, ~0.24 USD pièce, écrou métal nickelé cohérent visuellement avec écrous jacks audio Neutrik. |
+| Cliff DC-10S panel mount | 🟡 Bonne option de **backup** en cas de rupture stock DC-025M chez Tayda. |
+
+**Rationale**
+
+Le DC-025M Tayda tient la promesse "standard reproductible par les viewers" *mieux* que le 712A en pratique : toutes les autres pièces Sauvignac (boîtier prépeint Convention 8, knobs, LEDs, footswitches) sont déjà sourcées chez Tayda. Le DC-025M s'inscrit dans un panier Tayda unifié plutôt que d'imposer une commande séparée. Friction zéro pour qui reproduit Mazout depuis une publication YouTube.
+
+Gain secondaire : ~10x moins cher (0.24 vs ~3 USD), soit ~125 USD cumulés sur la roadmap 45 pédales — pas un driver à lui seul, mais cohérent avec la logique de mutualisation Tayda.
+
+**Test multimètre obligatoire** sur la première unité de chaque batch Tayda (référence générique chinoise, construction théoriquement variable d'un sous-traitant à l'autre — vérifier que l'écrou métal n'a aucune continuité avec les cosses de soudure). Si une continuité existe, prévoir rondelle d'isolation nylon ou changer de fournisseur.
+
+Workflow de câblage standard, schéma diode shunt, alternatives écartées et procédure de test multimètre documentés dans **Convention 9 de `pedales_panel_layout.md`**.
+
+---
+
 <a id="pedales"></a>
 ## Pédales d'effets — Décisions par projet
 
@@ -284,6 +427,16 @@ Alternative pré-validée : **sous-traiter l'impression UV directe sur Hammond**
 ### Long terme — chaîne YouTube
 - [ ] Tournage du Trailer Sauvignac DIY (similaire au Trailer PërKompanion)
 - [ ] Coordination des deux playlists (DIY et PërKompanion)
+
+
+## Nouvelles entrées datées 2026-04-29 :
+
+Convention naming saga = T1/T2/T3 en com publique (Option A actée, retire la question ouverte)
+Règle méta-gamme : projet rythmique = T2 natif par construction (delay, LFO, tremolo, vibrato, modulations, etc.)
+Format saga = 3 modules distincts (pas un PCB évolutif)
+Standard MIDI in modules Sauvignac = TRS 3.5mm Type A (norme MMA 2018)
+Premier T2 natif de la roadmap = Echo Tribe T2 (Phase 1, projet #3)
+
 
 ---
 

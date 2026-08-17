@@ -1,0 +1,92 @@
+# profiles/perkons_hd01.yaml
+# Erica Synths Perkons HD-01 — firmware v1.2
+# Profile de référence du framework PërKompanion.
+#
+# Source des CCs et courbes : PERKOMPANION_PROTOCOL_TABLES.md, bloc
+# 0x0000-0x0FFF (avant relocalisation framework). Valeurs validées sur
+# matériel par Sauvignac, avril 2026 (test budget MIDI 800 msg/sec).
+
+profile:
+  id: "perkons_hd01"
+  name: "Erica Synths Perkons HD-01"
+  version: "1.0.0"
+  device_firmware: "1.2"
+  author: "Sauvignac"
+  license: "MIT"
+  default_color: "#FF0040"     # Rouge Sauvignac (palette Cyber Brutalist)
+  preferred_slot: 0            # hint runtime, non bloquant
+  snapshot_scopes: ["track", "device"]
+
+track_labels:
+  singular: "voice"
+  plural: "voices"
+
+notes:
+  midi_mode_assumed: "multi_channel"
+  midi_mode_setup: "SHIFT + MOD → Track 3 Step 2 sur le device."
+  not_midi_exposed:
+    - "Probability per step (hardware only : Hold step + PROB + tap)"
+    - "Ratchet per step (hardware only : Hold step + RATCHET + tap)"
+    - "Odds per step (hardware only : Hold step + ODDS1/ODDS2 + tap)"
+    - "Parameter locks (hardware only : Hold step + ajuster paramètre)"
+    - "Section Master (BBD, compresseur, volume master) — pas de CC documenté"
+  audio_in_routing: "Sortie Perkons → entrées audio PërKompanion (analogique pur, hors-MIDI)."
+
+# Anchor : les 4 voix sont structurellement identiques côté MIDI.
+# Le runtime applique `cc_offset` pour calculer le CC réel par voix.
+voice_params: &voice_params
+  - { name: "Tune",    cc: 70, curve: "linear",     type: "continuous" }
+  - { name: "Param1",  cc: 71, curve: "linear",     type: "continuous" }
+  - { name: "Cutoff",  cc: 72, curve: "log_strong", type: "continuous" }
+  - { name: "FX_Send", cc: 73, curve: "exp",        type: "continuous" }
+  - { name: "Decay",   cc: 74, curve: "exp",        type: "continuous" }
+  - { name: "Param2",  cc: 75, curve: "linear",     type: "continuous" }
+  - { name: "Drive",   cc: 76, curve: "scurve",     type: "continuous" }
+  - { name: "Level",   cc: 77, curve: "exp",        type: "continuous" }
+  - { name: "Algo",    cc: 78, curve: "none",       type: "enum",
+      values: ["Algo1", "Algo2", "Algo3 (Karplus)"] }
+  - { name: "Mode",    cc: 79, curve: "none",       type: "enum",
+      values: ["Mode1", "Mode2", "Mode3"] }
+  - { name: "Filter",  cc: 80, curve: "none",       type: "enum",
+      values: ["LP", "BP", "HP"] }
+
+tracks:
+  - id: "v1"
+    label: "V1"
+    kind: "voice"
+    addressing:
+      midi_channel: 1
+    cc_offset: 0
+    params: *voice_params
+
+  - id: "v2"
+    label: "V2"
+    kind: "voice"
+    addressing:
+      midi_channel: 2
+    cc_offset: 11               # CCs réels = 81..91
+    params: *voice_params
+
+  - id: "v3"
+    label: "V3"
+    kind: "voice"
+    addressing:
+      midi_channel: 3
+    cc_offset: 22               # CCs réels = 92..102
+    params: *voice_params
+
+  - id: "v4"
+    label: "V4"
+    kind: "voice"
+    addressing:
+      midi_channel: 4
+    cc_offset: 33               # CCs réels = 103..113
+    params: *voice_params
+
+# Le Perkons n'expose aucun paramètre Master en MIDI CC documenté.
+# Section absente volontairement (pas de stub vide).
+
+quirks:
+  pot_catch_broken: true        # firmware v1.2 : jump direct, comportement non
+                                # conforme à la doc Erica Synths.
+  midi_only_partial: true       # cf. notes.not_midi_exposed.

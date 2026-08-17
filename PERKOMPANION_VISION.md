@@ -1,7 +1,70 @@
+# PërKompanion — Vision — v1.0.0
+
+## Changelog v0.9 → v1.0.0
+
+### En-tête modifiée
+- Avant : "v0.9 — avril 2026" + section "Changements clés v0.7 → v0.8".
+- Après : "v1.0.0 — avril 2026". La section v0.7 → v0.8 est conservée
+  comme historique. Une nouvelle section "Changements clés v0.9 → v1.0.0"
+  est ajoutée juste après.
+
+### Pitch officiel §1 (`### Pitch officiel`) — INCHANGÉ
+- Décision chef d'orchestre : le pitch reste **Perkons-centric** pour la
+  phase 1. Le pivot framework deviendra un événement narratif au moment
+  du lancement de la 2e machine supportée. Pas de modification publique.
+- Rationale : préserver la lisibilité côté nouveaux viewers YouTube et
+  contributeurs externes en phase 1. Le framework est un détail
+  d'architecture, pas un produit séparé.
+
+### Philosophie §1 — UNE puce ajoutée
+- Ajout du bullet : "**Architecture device-agnostic en interne** : le
+  firmware ne connaît que la grammaire des profiles, pas le hardware
+  audio externe — ouverture progressive vers d'autres machines à partir
+  de v2/v3."
+- Rationale : un contributeur MIT qui lit la philosophie comprend
+  immédiatement que le projet est conçu pour scaler. Pas de marketing,
+  juste une vérité architecturale exposée.
+
+### §10 "Mode dégradé et résilience" — paragraphe ajouté
+- Ajout d'un paragraphe sur le mode dégradé multi-machine (Option A +
+  fallback B), conforme à la décision provisoire des notes privées du
+  28 avril 2026.
+- Rationale : la VISION expose déjà le mode dégradé en v0.9 ; il faut
+  refléter le fait que le mode dégradé est désormais "par profile actif"
+  et non "Perkons hardcodé".
+
+### §13 "Inventaire matériel v1 complet" — UNE phrase ajoutée
+- Ajout : "À noter que les jacks d'entrée audio physiques (4 in PCM1808)
+  doivent être étiquetés génériquement IN 1 / IN 2 / IN 3 / IN 4 et non
+  V1 IN / V2 IN / V3 IN / V4 IN, pour ne pas figer conceptuellement les
+  entrées sur les voix Perkons."
+- Rationale : conforme à la sous-section "Étiquetage de la plate" des
+  notes privées. Conséquence pratique de la roadmap multi-machine v2-v4
+  qui doit être prise en compte avant l'envoi en gravure laser.
+
+### Roadmap §8 — UN bullet ajouté à v3
+- v3 — ajout du bullet : "**Premier profile externe additionnel**
+  (Digitakt II, Hydrasynth, ou autre selon disponibilité et besoins de la
+  communauté) — première itération multi-machine de PërKompanion."
+- Rationale : le pivot framework apparaîtra de fait à ce moment-là (par
+  l'arrivée d'une 2e machine supportée), sans qu'on l'annonce préalablement
+  comme un événement narratif dans la roadmap. Cohérent avec l'arbitrage
+  "phase 1 invisible" + discrétion narrative.
+
+### Sections inchangées
+- §1 (Identité) : pitch et cible inchangés.
+- §2 (Architecture deux axes) : inchangée — les V5-V8 restent décrites
+  comme "voix virtuelles internes" sans mention du pivot framework.
+- §3 (Voix virtuelles), §4 (Modulation Engine), §5 (Architecture matérielle),
+  §6 (Audio), §7 (Fabrication), §9 (Sample packs), §11 (Budget), §12
+  (Contraintes) : inchangées.
+
+---
+
 # PërKompanion — Vision
 
 > Extension modulaire hardware + software pour Erica Synths Perkons HD-01
-> Document produit et fonctionnel — **v0.9** — avril 2026
+> Document produit et fonctionnel — **v1.0.0** — avril 2026
 
 ---
 
@@ -46,6 +109,32 @@ Pour le layout détaillé du panneau hardware, voir `panel_design.md`.
 - **Prototypage TOUT en tact 6×6mm pas 2.54mm** sur breadboard
 - **Nouveau fournisseur TME** pour composants critiques (ICs authentiques, jacks Neutrik, condensateurs qualité)
 
+### Changements clés v0.9 → v1.0.0
+
+**Pivot framework (architecture interne)**. PërKompanion est désormais conçu
+en interne comme un framework générique de companion MIDI, avec le Perkons
+HD-01 comme premier profile de référence. Cette évolution est **architecturale
+et invisible côté pitch public** en phase 1. Conséquences techniques :
+
+- Tables `param_id` du protocole : bloc `0x0000-0x0FFF` réservé aux profiles
+  externes (4 slots × 1024 params). Voix virtuelles V5-V8 internes
+  relocalisées vers `0x6000-0x6FFF`. Voir `PERKOMPANION_PROTOCOL_TABLES.md`
+  §2 et §14.
+- Format Device Profile YAML défini : `device_profile_schema.md` +
+  `profile_template_with_docs.yaml`.
+- 4 profiles de référence rédigés et stress-testés : Perkons HD-01,
+  Digitakt II, Electribe 2 Sampler, TD-3-MO. Voir `profiles/*.yaml`.
+- Mode dégradé Teensy étendu pour fonctionner avec n'importe quel profile
+  actif (cf. §10 ci-dessous), avec fallback Perkons hardcodé en sécurité
+  ultime si EEPROM corrompue.
+- Étiquetage des jacks d'entrée audio neutralisé (IN 1/2/3/4 plutôt que
+  V1 IN / V2 IN / V3 IN / V4 IN) pour ne pas figer conceptuellement les
+  entrées sur les voix Perkons (cf. §13 BOM).
+
+**Aucun changement** sur le pitch officiel, l'architecture deux axes, le
+Modulation Engine, l'architecture matérielle, l'audio, la fabrication, le
+budget v1. Les évolutions v0.9 ergonomiques restent valides.
+
 ---
 
 ## 1. Identité
@@ -84,6 +173,7 @@ Le Perkons fournit la source sonore analogique. PërKompanion lui donne la puiss
 - **Règle du "un pour un"** : pour chaque ajout, une justification ou un retrait équivalent
 - **Open source MIT** : aligné free tekno
 - **Esthétique suie, mazout, friction** : industrielle, organique, dirty
+- **Architecture device-agnostic en interne** : le firmware ne connaît que la grammaire des profiles, pas le hardware audio externe — ouverture progressive vers d'autres machines à partir de v2/v3
 
 ---
 
@@ -843,8 +933,11 @@ Développement parallèle (hardware, Pi, Teensy, UI, doc). Timeline ~3 ans pour 
 - **Polyphonie ajustable**
 - Modulation basique par hotcue
 - FX chain simple par hotcue
+- **Premier profile externe additionnel** (Digitakt II, Hydrasynth, ou
+  autre selon disponibilité et besoins de la communauté) — première
+  itération multi-machine de PërKompanion.
 
-**PërKompanion devient sampleur complet**.
+**PërKompanion devient sampleur complet** et **multi-machine**.
 
 ### v4 — Séquenceur et modulation par hotcue (+6-9 mois)
 
@@ -920,6 +1013,28 @@ Plateforme de partage :
 
 ---
 
+
+### Mode dégradé multi-profile (v1.0.0+)
+
+Avec le pivot framework, le mode dégradé du Teensy est étendu pour piloter
+**le profile actuellement actif**, quel qu'il soit, et plus seulement le
+Perkons. Mécanisme :
+
+- Le Teensy garde en EEPROM (4 KB sur Teensy 4.1) un snapshot binaire
+  minimal du profile actif : CCs, channels, ranges, courbes par param.
+  Ni l'UI ni les noms — uniquement ce qui est nécessaire au pilotage MIDI.
+- Mise à jour automatique de l'EEPROM à chaque changement de page côté Pi
+  (commande `SET_ACTIVE_PROFILE_FOR_DEGRADED_MODE` 0xC5).
+- Validation au boot Teensy via CRC + version.
+- **Si EEPROM corrompue ou vide** : fallback automatique sur Perkons
+  hardcodé (la machine fondatrice est toujours présente dans le setup
+  Sauvignac et reste un filet de sécurité ultime).
+- Indicateur visuel sur OLED master pour signaler quel mode dégradé est
+  actif (selon profile X / fallback Perkons hardcodé).
+
+Cette extension préserve la philosophie initiale du mode dégradé (rester
+jouable même si le Pi tombe) tout en accommodant la pluralité de devices
+gérés à partir de v3.
 ## 11. Budget v1 global
 
 ### Résumé par fournisseur
@@ -1183,6 +1298,21 @@ Sculpteo remplace l'option FabLab Poitiers initialement envisagée (distance 30 
 
 ---
 
+
+### Note v1.0.0 — étiquetage des jacks d'entrée audio
+
+Avec le pivot framework et la roadmap multi-machine v2-v4, les 4 jacks
+d'entrée audio (PCM1808 v1, multi-canal v3+) sur la tranche arrière de la
+plate doivent être **étiquetés génériquement** :
+
+> ✅ **IN 1 / IN 2 / IN 3 / IN 4** (gravure laser FabLab)
+> 
+> ❌ ~~V1 IN / V2 IN / V3 IN / V4 IN~~ (figerait conceptuellement les
+> entrées sur les voix Perkons)
+
+À propager dans `panel_design.md` avant l'envoi de la plate en gravure
+FabLab. Pas urgent (la plate ne part pas avant validation prototype),
+mais à ne pas oublier.
 ## Conclusion
 
 PërKompanion v0.8 consolide la vision d'un instrument live complet pour le Perkons HD-01 :

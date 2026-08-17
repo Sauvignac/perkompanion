@@ -1,0 +1,74 @@
+# profiles/behringer_td3_mo.yaml
+# Behringer TD-3-MO (Modded Out, "Devil-Fish-style") — firmware TBD
+# Profile #4 du framework — stress-test minimaliste.
+#
+# Toutes les valeurs CC ci-dessous sont des hypothèses cohérentes avec
+# les conventions Behringer/Roland TB-303 mais NON validées contre la
+# fiche MIDI Implementation officielle du TD-3-MO. Validation reportée
+# à la phase de test runtime, machine en main.
+
+profile:
+  id: "behringer_td3_mo"
+  name: "Behringer TD-3-MO"
+  version: "0.1.0"
+  device_firmware: "TO_VALIDATE"
+  author: "Sauvignac"
+  license: "MIT"
+  default_color: "#FFD700"     # Jaune (palette Cyber Brutalist)
+  preferred_slot: 3
+  snapshot_scopes: ["track", "device"]
+
+track_labels:
+  singular: "voice"
+  plural: "voices"
+
+notes:
+  to_validate_against_midi_impl_chart:
+    - "Numéros CC exacts pour tous les paramètres listés."
+    - "Existence et CC du Sub-Oscillator (modded only)."
+    - "Existence et CC de l'Overdrive Devil-Fish (modded only)."
+    - "Modes filtre additionnels disponibles en MIDI (modded)."
+    - "Accent Boost — paramètre continu ou simple switch."
+    - "Numéro de firmware ciblé (révisions hardware MO existent)."
+  not_midi_exposed:
+    - "Pattern et notes du séquenceur interne (mode hardware)."
+    - "Tap Tempo (BPM via clock externe seulement)."
+  midi_messages_not_modeled:
+    description: |
+      Le TD-3-MO accepte Pitch Bend natif et probablement Channel
+      Aftertouch. Ces messages ne sont pas représentés dans `params`
+      parce que `mechanism` ne couvre pour l'instant que cc et nrpn.
+      Trou assumé. Sera traité avec l'extension `mechanism` à
+      pitch_bend / aftertouch lors d'un futur profile (Hydrasynth
+      pressenti comme déclencheur).
+
+# === Track unique =============================================================
+# Pas d'anchor : avec une seule track, factoriser n'a aucun sens.
+# Pas de cc_offset : non applicable, un seul block CC.
+
+tracks:
+  - id: "v1"
+    label: "TB"
+    kind: "monosynth"
+    addressing:
+      midi_channel: 1
+    params:
+      # CCs standard TB-303 / TD-3 d'origine
+      - { name: "Tuning",         cc: 17, curve: "linear",     type: "continuous_bipolar" }
+      - { name: "Cutoff",         cc: 74, curve: "log_strong", type: "continuous" }
+      - { name: "Resonance",      cc: 71, curve: "linear",     type: "continuous" }
+      - { name: "Env_Mod",        cc: 12, curve: "linear",     type: "continuous" }
+      - { name: "Decay",          cc: 13, curve: "exp",        type: "continuous" }
+      - { name: "Accent",         cc: 16, curve: "linear",     type: "continuous" }
+      - { name: "Glide",          cc: 5,  curve: "exp",        type: "continuous" }
+      - { name: "Volume",         cc: 7,  curve: "exp",        type: "continuous" }
+      - { name: "Distortion_On",  cc: 81, curve: "none",       type: "boolean" }
+      # Paramètres ajoutés par le mod Devil-Fish style (préfixe MO_)
+      - { name: "MO_SubOsc_Level",  cc: 82, curve: "linear", type: "continuous" }
+      - { name: "MO_Overdrive",     cc: 83, curve: "scurve", type: "continuous" }
+      - { name: "MO_Filter_Mode",   cc: 84, curve: "none",   type: "enum",
+          values: ["LP_24", "LP_18", "HP", "BP"] }
+      - { name: "MO_Accent_Boost",  cc: 85, curve: "linear", type: "continuous" }
+
+# Pas de global_param_groups — section absente (pas de stub vide).
+# Pas de quirks identifiés — section absente.

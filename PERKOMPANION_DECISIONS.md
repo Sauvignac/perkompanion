@@ -221,27 +221,43 @@ Cohérent avec les standards MPC/Push (15-25 mm).
 
 ---
 
-### §11. Encodeurs — KY-040 pour proto, Bourns PEC11R pour panel final
+### §11. Encodeurs — KY-040 pour V1, upgrade Bourns/Alps ciblé en V1.5 si besoin
 
-**Décision** : **KY-040 pour le prototypage uniquement. Bourns PEC11R (ou Alps EC11) pour le panel définitif.**
+**Décision** : **modules KY-040 pour tous les encodeurs en V1, du prototypage jusqu'au panel final.** Upgrade ciblé Bourns PEC11R / Alps EC11 30 détentes envisagé en V1.5, uniquement sur les encodeurs critiques où le besoin de finesse se sera réellement manifesté à l'usage.
 
-**Limitations KY-040** :
-- Rebonds importants → faux pulses en polling → debouncing logiciel obligatoire
-- Résolution 20 détentes/tour (correct mais pas optimal)
-- Durabilité ~15 000 cycles → insuffisant pour usage live intensif sur 64 encodeurs
+**Caractéristiques KY-040** :
+- Module breakout : encodeur EC11-style 11mm soudé sur PCB
+- 20 détentes / tour
+- Switch SPST intégré (push sur le shaft)
+- **Pull-ups 10 kΩ embarqués sur A et B** → câblage minimal côté firmware, aucun composant externe à ajouter
+- Bushing M7 → trou panel Ø7mm (compat `panel_design.md`)
+- Shaft 6mm D-flat ≈ 13 mm
+- Durabilité ~15K cycles
 
-**Bourns PEC11R / Alps EC11** :
-- Même empreinte mécanique, même shaft 6mm, même trou panel Ø7mm → **swap transparent**
-- 30 détentes/tour, meilleur anti-rebond mécanique, rated 30 000+ cycles
-- Surcoût acceptable pour un instrument live
+**Acceptation des 20 détentes pour V1**
 
-**Impact firmware** :
+20 détentes/tour, c'est la résolution standard des EC11 grand public et de la grande majorité des contrôleurs MIDI. Pour les paramètres à plage large (cutoff, decay, drive, FX send, level), l'**accélération encodeur** déjà spécifiée dans `PERKOMPANION_PHASE0.md` (multiplicateurs 1/2/4/8 selon vitesse de rotation) compense largement la résolution mécanique. La sensation de finesse perçue dépend bien plus de la courbe de mapping et de l'accélération que du nombre de détentes brutes.
 
-**Logique firmware identique.** Les deux encodeurs utilisent la quadrature standard (signaux A et B). Le firmware lit les transitions et compte les pas de la même manière dans les deux cas.
+Pour les paramètres très précis (pitch en demi-tons, BPM unitaire), un profil d'accélération `None` est déjà prévu côté firmware — un cran = un pas, indépendamment de la vitesse.
 
-**Seul ajustement** : la **constante de pas par tour** en variable de config (20 pour KY-040, 24 ou 30 pour PEC11R) — pas une refonte. Le **debouncing logiciel** reste implémenté quel que soit l'encodeur (bonne pratique, plus critique sur KY-040 mais utile sur PEC11R aussi pour absorber l'usure).
+**Porte ouverte vers Bourns PEC11R / Alps EC11 30 détentes en V1.5**
 
-**Impact panel_design.md** : aucun — trou Ø7mm identique pour les deux.
+L'empreinte mécanique est préservée pour un upgrade ultérieur sans refonte panel :
+- Bushing M7 identique → trou Ø7mm inchangé
+- Shaft 6mm D-flat identique → knobs réutilisés
+- Pinout 5 broches identique → rewiring minimal
+
+**Critères pour déclencher l'upgrade V1.5** : après plusieurs mois de jam V1, si certains encodeurs précis (typiquement master, MODE des voix, encodeur volume casque) ressortent comme manquant de finesse à l'usage réel. Upgrade ciblé sur ~5-10 unités, pas sur les 64 du panel. Achat sur TME ou Mouser EU.
+
+Le firmware sait déjà gérer la différence : la constante « pas par tour » est en variable de config par encodeur (20 pour KY-040, 24 ou 30 pour Bourns selon réf commandée). Pas de refonte logique.
+
+**Impact firmware V1** :
+
+Quadrature standard A/B, debouncing logiciel implémenté côté Teensy (bonne pratique générale, plus critique sur encodeurs mécaniques type KY-040). Aucune adaptation supplémentaire.
+
+**Impact panel_design.md** : aucun — trou Ø7mm prévu.
+
+**Stock** : commande KY-040 déjà passée (4 packs de 20 = 80 unités), couvre les 64 panel + ~16 spare/extension. Stock excédentaire utilisable pour les pédales Sauvignac T2/T3 (1-2 encodeurs par pédale pour navigation menu / preset).
 
 ---
 
@@ -622,7 +638,6 @@ Test 2 — Inspection du DOM bundlé : le bundle injecte un container `<div clas
 ### Moyen terme (après arrivée Teensy)
 - [ ] Test circuit MIDI sur breadboard (MIDI IN + MIDI OUT)
 - [ ] Commande Sculpteo : plate test puis plate principale + module peuplier
-- [ ] Commande Bourns PEC11R sur TME au moment commande Sculpteo
 - [ ] Implémenter debouncing logiciel encodeurs dans firmware Teensy
 - [ ] Vérifier configuration pins PCM1808/PCM5102A à réception modules
 - [ ] Premier firmware Teensy (boot, ping série, test OLED)
@@ -634,6 +649,7 @@ Test 2 — Inspection du DOM bundlé : le bundle injecte un container `<div clas
 - [ ] Tournage de l'Épisode 0 — Vision et fondations
 - [ ] Roadmap PCB custom V3+ (apprentissage KiCad via projets Sauvignac DIY Phase 1-2)
 - [ ] Évaluation besoin PCM3168A après 6 mois de jam avec V1
+- [ ] Évaluation besoin upgrade Bourns/Alps 30 détentes après quelques mois de jam V1 (cf. §11) — upgrade ciblé sur encodeurs critiques uniquement si la finesse 20 détentes ressort comme limitante à l'usage
 - [ ] Épisode YouTube « Migration PCB custom » (plus tard)
 
 ---

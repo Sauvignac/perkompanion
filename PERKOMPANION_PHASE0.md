@@ -1,7 +1,46 @@
+# PërKompanion — Phase 0 — v1.0.0
+
+## Changelog v0.9 → v1.0.0
+
+### En-tête modifiée
+- Avant : "v0.9 — avril 2026" + note "Changements clés v0.8 final → v0.9".
+- Après : "v1.0.0 — avril 2026". La note v0.9 est conservée telle quelle
+  comme historique des évolutions ergonomiques antérieures, augmentée d'un
+  paragraphe v1.0.0 sur le pivot framework.
+- Rationale : la v1.0.0 est conceptuelle (pivot framework), pas hardware.
+  Toutes les fondations techniques v0.9 (pinout, audio, MIDI routing) sont
+  préservées.
+
+### §2 "Allocation complète des commandes" modifiée
+- Avant : liste des blocs 0x00-0x9F + 0xF0-0xFF Pi → Teensy.
+- Après : ajout du bloc **0xC0-0xCF : Device Profiles (v1.0.0+)** dans la
+  liste, avec pointeur vers PROTOCOL_TABLES.md §6.
+- Rationale : reflète l'ajout de la commande LOAD_DEVICE_PROFILE_* dans le
+  protocole. Pas de modification fonctionnelle d'autres blocs.
+
+### Nouvelle §13 "Framework et Device Profiles" ajoutée
+- Contenu : décrit le pivot framework du point de vue Phase 0 (architecture
+  technique). Liste les choix structurants : profile YAML parsé Pi-only,
+  binaire compact transféré au Teensy, 4 slots simultanés, V5-V8 internes
+  séparés.
+- Rationale : Phase 0 est le document des "fondations à poser avant la
+  première ligne de code". Le pivot framework est exactement ce type de
+  fondation. Sans cette section, un dev qui démarre l'implémentation
+  Teensy ou Pi ne sait pas que l'allocation des param_id est dynamique.
+
+### Sections inchangées
+- §1 (Routing MIDI), §2 (Protocole USB) hors allocation, §3 (Multi-thread Pi),
+  §4 (Cycle de vie système), §5 à §12 : aucune modification.
+- Renumérotation : aucune. La nouvelle §13 s'insère APRÈS la §12 actuelle.
+  La §13 actuelle (Crédibilité du projet) si elle existe en Phase 0 reste
+  à sa place.
+
+---
+
 # PërKompanion — Phase 0
 
 > Fondations techniques à poser avant toute implémentation
-> Document technique — **v0.9** — avril 2026
+> Document technique — **v1.0.0** — avril 2026
 
 ---
 
@@ -26,6 +65,25 @@ Les fondations techniques définies en v0.8 final restent valides en v0.9. Les �
 - Alternative "souder PSRAM soi-même" évaluée et rejetée (complexité CMS, préférence produit testé/monté pro)
 
 **Aucun changement architectural** : pinout Teensy, architecture audio SAI1/SAI2 + 2×PCM1808 + 6×PCM5102A + TPA6120, chaîne SPI MCP23S17, protocole MIDI, mode dégradé — **tout reste identique à la v0.8 final**.
+
+## Changements clés v0.9 → v1.0.0
+
+**Pivot framework**. PërKompanion devient un framework générique de
+companion MIDI. Le Perkons HD-01 reste la machine fondatrice et le profile
+de référence, mais n'est plus codé en dur dans le firmware. Cette évolution
+conceptuelle :
+
+- ne modifie **aucune décision Phase 0 antérieure** (routing MIDI, pinout
+  Teensy, architecture audio, protocole de transport, mode dégradé restent
+  identiques) ;
+- **ajoute** une couche d'abstraction "Device Profile" parsée côté Pi,
+  sérialisée en binaire et transmise au Teensy via une nouvelle famille
+  de commandes 0xC0-0xCF ;
+- **ajoute** une nouvelle section §13 dans ce document décrivant les
+  fondations techniques de cette couche.
+
+Voir aussi `device_profile_schema.md` (spec narrative) et
+`profile_template_with_docs.yaml` (template auto-documenté).
 
 ---
 
@@ -247,6 +305,9 @@ Les paramètres **integer** (Pitch semitones, BPM centimals) utilisent la valeur
 - 0x70-0x7F : pad mapping (avec chunking pour layouts longs)
 - 0x80-0x8F : DSP chains (v2+)
 - 0x90-0x9F : Voice Kits et Perkons Snapshots (v1+)
+- 0xA0-0xAF : motions (v2+)
+- **0xC0-0xCF : Device Profiles (v1.0.0+)** — chargement, déchargement,
+  listing des profiles externes (cf. PROTOCOL_TABLES.md §6 et §14)
 - 0xF0-0xFF : maintenance et debug
 
 ### Transfert de samples hotcue (chunking)
@@ -1386,3 +1447,109 @@ Toutes les décisions sont documentées ici et dans `PROTOCOL_TABLES.md` pour é
 ---
 
 *Fin de PERKOMPANION_PHASE0.md — v0.8 final, avril 2026*
+
+---
+
+## 13. Framework et Device Profiles (v1.0.0+)
+
+### Objectif
+
+Avant la v1.0.0, le firmware Teensy était écrit avec le Perkons HD-01 codé
+en dur dans les tables param_id et le mapping CC MIDI. Cette section pose
+les fondations techniques du **pivot framework** : le firmware ne connaît
+plus le hardware audio externe, seulement une grammaire de profile.
+
+Cette décision est prise **avant la première ligne de code applicatif**,
+conformément au principe Phase 0 : "tout ce qui, modifié tardivement,
+provoque des refactoring majeurs".
+
+### Architecture en couches
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Profile YAML (Pi, fichier disque)                           │
+│   profiles/perkons_hd01.yaml                                │
+│   profiles/elektron_digitakt_ii.yaml                        │
+│   profiles/...                                              │
+└────────────────────────┬────────────────────────────────────┘
+                         │ js-yaml parse + validation
+                         ▼
+┌─────────────────────────────────────────────────────────────┐
+│ Profile en mémoire (Pi, Node.js)                            │
+│   { tracks, params, addressing, preface, courbes, ... }     │
+└────────────────────────┬────────────────────────────────────┘
+                         │ sérialisation binaire compacte
+                         ▼
+┌─────────────────────────────────────────────────────────────┐
+│ Blob binaire (transit USB)                                  │
+│   Bloc commandes 0xC0-0xCF, chunks de 240 bytes max         │
+└────────────────────────┬────────────────────────────────────┘
+                         │ LOAD_DEVICE_PROFILE_BEGIN/CHUNK/END
+                         ▼
+┌─────────────────────────────────────────────────────────────┐
+│ Profile en RAM Teensy                                       │
+│   table param_id → (slot, mechanism, cc/nrpn, channel, ...) │
+│   moteur de modulation device-agnostic via param_id         │
+└────────────────────────┬────────────────────────────────────┘
+                         │ écriture EEPROM (4 KB) si slot actif
+                         ▼
+┌─────────────────────────────────────────────────────────────┐
+│ Profile en EEPROM (mode dégradé)                            │
+│   restitué au boot Teensy si Pi indisponible                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Décisions structurantes
+
+**Le Teensy ne parse jamais de YAML.** Le parsing YAML est CPU-intensif
+et nécessite un écosystème (js-yaml, validation, gestion d'erreurs) qui
+n'a pas sa place sur le firmware embarqué. Le Pi prépare le binaire,
+le Teensy le consomme.
+
+**4 slots simultanés en v1.** Chaque slot est une plage de 1024 param_id
+(`0x0000-0x03FF`, `0x0400-0x07FF`, `0x0800-0x0BFF`, `0x0C00-0x0FFF`). Un
+profile YAML peut suggérer un slot via `preferred_slot` (hint, non bloquant).
+
+**Voix virtuelles V5-V8 séparées.** Le bloc `0x6000-0x6FFF` (anciennement
+réservé pour modulations complexes) accueille désormais les V5-V8
+internes. Elles sont du code embarqué PërKompanion, pas un device externe
+— elles méritent un bloc dédié.
+
+**EEPROM 4 KB largement suffisante.** Taille profile minimal sérialisé
+estimée 200-500 bytes (CCs, channels, courbes, ranges — pas l'UI ni les
+noms). 4 KB autorisent à stocker plusieurs profiles en cache si besoin.
+
+**Sérialisation last-write-wins.** Si le Pi met à jour un profile et le
+re-transfère au Teensy, le slot est écrasé. Pas de version concurrentielle.
+Synchronisation via `version` + `crc32` à valider à chaque LOAD.
+
+### Conséquences pour l'implémentation
+
+**Côté Pi** : `device_profile_loader.js` à écrire. Charge le YAML, valide,
+sérialise, dialogue via les commandes 0xC0-0xCF. Pré-existence du
+parser à venir (~200-500 LOC Node.js, dépendance `js-yaml`).
+
+**Côté Teensy** : `DeviceProfile` struct + `param_id_to_midi_message()`
+à implémenter. Pas de hardcoding Perkons CC dans le moteur de modulation.
+Le moteur opère uniquement sur `param_id`.
+
+**Côté UI** : la liste des profiles chargés est un nouvel écran (futur).
+Pour le mode v1, le profile Perkons est chargé automatiquement en slot 0.
+
+### Documents associés
+
+- `PERKOMPANION_PROTOCOL_TABLES.md` §6 (commandes 0xC0-0xCF) et §14
+  (Device Profile Schema) : tables de référence.
+- `device_profile_schema.md` : spec narrative complète du format.
+- `profile_template_with_docs.yaml` : template auto-documenté.
+- `profiles/*.yaml` : 4 profiles de référence.
+
+### Hors scope Phase 0
+
+- **Format binaire exact du blob** transféré entre Pi et Teensy : à
+  spécifier en pré-production firmware (un sous-document
+  `device_profile_binary.md` à venir).
+- **UI de gestion des profiles** : livrée en v1.x, pas en pré-implémentation.
+- **Mécanisme de signature/auth des profiles** : non implémenté en v1.
+  Possible vecteur de robustesse si l'écosystème MIT scale (v3+).
+
